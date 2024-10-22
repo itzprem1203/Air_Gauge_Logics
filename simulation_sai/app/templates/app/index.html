@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Home page</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
+    <style>
+        body {
+            background-color: #1a7d9e;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            color: white;
+            text-shadow: 4px 4px 8px black;
+        }
+
+        .gallery {
+            margin-top: 220px;
+            margin-left: 300px;
+            position: relative;
+            width: 400px; /* Adjust this value based on your preference */
+            height: 400px; /* Adjust this value based on your preference */
+        }
+
+        .image-container {
+            position: absolute;
+            text-align: center;
+            transform-origin: center;
+        }
+
+        .image-container img {
+            height: 100px; /* Adjust this value based on your preference */
+            width: 100px; /* Adjust this value based on your preference */
+            background-color:white;
+            box-shadow: 5px 5px 15px 1px black;
+            border-radius: 50%;
+            margin: 15px; /* Adjust this value for spacing */
+           
+        }
+
+        .image-container p {
+            margin: 5px 0 0;
+            font-size: 16px; /* Adjust this value for increased font size */
+            font-weight: bold; /* Make the font bold */
+        }
+
+        .center-image {
+            position: absolute;
+            text-align: center;
+            transform: translate(-50%, -50%);
+            top: 23%;
+            left: 20%; 
+        }
+
+        .center-image img {
+            height: 150px; /* Adjust this value based on your preference */
+            width: 150px; /* Adjust this value based on your preference */
+            background-color: white;
+            box-shadow: 5px 5px 15px 1px black;
+            border-radius: 50%;
+        }
+
+        .center-image p {
+            margin: 5px 0 0;
+            font-size: 16px; /* Adjust this value for increased font size */
+            font-weight: bold; /* Make the font bold */
+        }
+
+        @keyframes rotateImages{
+            from{transform: rotate(0deg);}
+            to{transform: rotate(360deg);}
+        }
+
+        .image-1 { transform: rotate(0deg) translate(210px) rotate(0deg); }
+        .image-2 { transform: rotate(45deg) translate(210px) rotate(-45deg); }
+        .image-3 { transform: rotate(90deg) translate(210px) rotate(-90deg); }
+        .image-4 { transform: rotate(135deg) translate(210px) rotate(-135deg); }
+        .image-5 { transform: rotate(180deg) translate(210px) rotate(-180deg); }
+        .image-6 { transform: rotate(225deg) translate(210px) rotate(-225deg); }
+        .image-7 { transform: rotate(270deg) translate(210px) rotate(-270deg); }
+        .image-8 { transform: rotate(315deg) translate(210px) rotate(-315deg); }
+
+       
+        #logout-btn {
+             height: 50px;
+            width: 150px;
+            margin-top: -500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: red;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            border: 2px solid black;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #logout-btn:hover{
+            background-color: orangered;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="gallery">
+        <div class="center-image">
+            <img src="{% static 'images/Gauge.jpg' %}">
+        </div>
+
+        <div class="image-container image-1">
+            <a href="/probe/">
+                <img src="{% static 'images/calibration.jpg' %}"></a>
+                <p>Probe Calibration</p>
+        </div>
+
+        <div class="image-container image-2">
+            <a href="/parameter/">
+                <img src="{% static 'images/para.jpg' %}"></a>
+                <p>Parameter Settings</p>
+            
+        </div>
+
+        <div class="image-container image-3">
+            <a href="/measurebox/">
+                <img src="{% static 'images/measure.jpg' %}"></a>
+                <p>Part Selection</p>
+         
+        </div>
+
+        <div class="image-container image-4">
+            <a href="/utility/">
+            <img src="{% static 'images/master.jpg' %}"></a>
+            <p>Utility</p>
+        </div>
+
+        <div class="image-container image-5">
+            <a href="/report/">
+            <img src="{% static 'images/report.jpg' %}"></a>
+            <p>Report</p>
+        </div>
+
+        <div class="image-container image-6">
+            <a href="/spc/">
+            <img src="{% static 'images/spc.jpg' %}"></a>
+            <p>SPC</p>
+        </div>
+
+        <div class="image-container image-7">
+            <a href="/trace/">
+            <img src="{% static 'images/general_settings.png' %}"></a>
+            <p>General Settings</p>
+        </div>
+
+        <div class="image-container image-8">
+            <a href="/comport/">
+            <img src="{% static 'images/comport_settings.png' %}"></a>
+            <p>Comport Settings</p>
+        </div>
+    </div>
+    <button id="logout-btn">LOGOUT</button>
+    <script>
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            window.location.href = "{% url 'home' %}";
+        });
+
+       // Function to check if the username and password are correct
+       function checkCredentials(username, password) {
+            if (username === 'o' && password === 'o') {
+                return 'o';
+            } else if (username === 'saadmin' && password === 'saadmin') {
+                return 'saadmin';
+            } 
+            else if (username === 'admin' && password === 'admin') {
+                return 'admin';
+            }else {
+                return null;
+            }
+        }
+
+        // Accessing the JSON data passed from Django
+        var userLoginsJson = JSON.parse('{{ user_logins_json | escapejs }}');
+
+        // Logging each user login entry separately
+        userLoginsJson.forEach(function(userLogin, index) {
+            console.log('Username:', userLogin.username);
+            console.log('Password:', userLogin.password);
+
+            // Check the provided credentials
+            var userRole = checkCredentials(userLogin.username, userLogin.password);
+            if (userRole === 'o') {
+                console.log('User "o" logged in. Limited access.');
+
+                // Enable links to allowed pages for "o"
+                document.querySelector('.image-container.image-3 a').setAttribute('href', '/measurebox/');
+                document.querySelector('.image-container.image-4 a').setAttribute('href', '/utility/');
+                document.querySelector('.image-container.image-5 a').setAttribute('href', '/report/');
+
+                // Disable links to other pages
+                var disabledLinks = document.querySelectorAll('.image-container a:not([href="/measurebox/"]):not([href="/utility/"]):not([href="/report/"])');
+                disabledLinks.forEach(function(link) {
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault(); // Prevent default link behavior
+                        alert('You do not have access to this page under the username "o".');
+                    });
+                });
+            } 
+            if (userRole === 'admin') {
+                console.log('User "admin" logged in. Limited access.');
+
+                // Enable links to allowed pages for "o"
+                document.querySelector('.image-container.image-3 a').setAttribute('href', '/measurebox/');
+                document.querySelector('.image-container.image-4 a').setAttribute('href', '/utility/');
+                document.querySelector('.image-container.image-5 a').setAttribute('href', '/report/');
+                document.querySelector('.image-container.image-8 a').setAttribute('href', '/comport/');
+                document.querySelector('.image-container.image-1 a').setAttribute('href', '/probe/');
+                document.querySelector('.image-container.image-2 a').setAttribute('href', '/parameter/');
+
+
+                // Disable links to other pages
+                var disabledLinks = document.querySelectorAll 
+                ('.image-container a:not([href="/measurebox/"]):not([href="/utility/"]):not([href="/report/"]):not([href="/comport/"]):not([href="/probe/"]):not([href="/parameter/"])');
+                disabledLinks.forEach(function(link) {
+                    link.addEventListener('click', function(event) {
+                        event.preventDefault(); // Prevent default link behavior
+                        alert('You do not have access to this page under the username "admin".');
+                    });
+                });
+            }
+            else if (userRole === 'saadmin') {
+                console.log('User "admin" logged in. Full access.');
+
+                // Enable links to all pages for "admin"
+                document.querySelectorAll('.image-container a').forEach(function(link) {
+                    var href = link.getAttribute('href');
+                    if (!href) {
+                        // Set the appropriate href attribute for admin
+                        var imgSrc = link.querySelector('img').getAttribute('src');
+                        if (imgSrc.includes('calibration.jpg')) {
+                            link.setAttribute('href', '/probe/');
+                        } else if (imgSrc.includes('para.jpg')) {
+                            link.setAttribute('href', '/parameter/');
+                        } else if (imgSrc.includes('master.jpg')) {
+                            link.setAttribute('href', '/measurebox/');
+                        } else if (imgSrc.includes('measure.jpg')) {
+                            link.setAttribute('href', '/utility/');
+                        } else if (imgSrc.includes('report.jpg')) {
+                            link.setAttribute('href', '/report/');
+                        } else if (imgSrc.includes('spc.jpg')) {
+                            link.setAttribute('href', '/spc/');
+                        } else if (imgSrc.includes('general_settings.png')) {
+                            link.setAttribute('href', '/trace/');
+                        } else if (imgSrc.includes('comport_settings.png')) {
+                            link.setAttribute('href', '/comport/');
+                        }
+                    }
+                });
+            } else {
+                console.log('Invalid credentials.');
+            }
+        });
+    </script>
+</body>
+</html>

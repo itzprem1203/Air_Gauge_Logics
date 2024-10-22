@@ -1,0 +1,725 @@
+{% extends 'app/layouts/main.html' %}
+{% block title %}
+Probe-1 Page
+{% endblock title %}
+{% block content %}
+<style>
+    .box-1{
+        margin-top: 10px;
+        margin-left: 50px;
+        height: 500px;
+        width: 1200px;
+        background-color:lightblue;
+    }
+
+    .box-0{
+        margin-top: 10px;
+        margin-left: 50px;
+        height: 30px;
+        width: 1200px;
+        background-color: white;
+        display: flex;
+        flex-direction: row;
+    }
+
+    input[type="radio"]{
+        margin-left: 50px;
+    }
+
+    input[type="radio"]:checked + label{
+    background-color: red;
+    color: black;
+    }
+
+    input[type="radio"]:checked + label:before{
+        background-color: red;
+        color: black;
+    }
+
+    label:before{
+        background-color: orange;
+    }
+
+    label{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        height: 50px;
+        background-color: orange;
+    }
+    button{
+        width: 150px;
+    }
+
+
+
+</style>
+<div class="box-0">
+    <button id="1_page" onclick="displayPage('page1', this)">Probe 1-7</button>
+    <button id="2_page" onclick="displayPage('page2', this)">Probe 8-14</button>
+
+    <button id="3_page" onclick="displayPage('page3', this)">Probe 15-21</button>
+    <button id="4_page" onclick="displayPage('page4', this)">Probe 22-28</button>
+    <button id="5_page" onclick="displayPage('page5', this)">Probe 29-35</button>
+    <button id="6_page" onclick="displayPage('page6', this)">Probe 36-42</button>
+</div>
+<div class="box-1">
+    <pre id="selected-probe" style="color: black; text-shadow: 2px 2px 4px white;
+margin-left: 400px;font-size:20px;">
+Selected Probe:
+</pre>
+<div class="probe1_page" id="page1">
+    <div class="container" style="margin-top: 0px;">
+        <div class="card">
+            <div class="card-image"></div>
+            <section class="container-a"><b>Probe Count</b></section>
+            <section class="container-b"><b>Coefficient</b></section>
+            <section class="container-c"><b>Probe Correction</b></section>
+            <section class="container-d"><b>High Ref.Value</b></section>
+            <section class="container-e"><b>Low Ref.Value</b></section>
+            <section class="container-f"><b>Reading</b></section>
+        </div>
+
+        
+            
+        <div class="card" id="card-1" data-probe-id="probe-1">
+            <input type="radio" name="size" id="radio-1" onclick="setCurrentProbe('Probe-1')">
+            <label for="Probe-1"><b>Probe-1</b></label>
+            <textarea id="probe-A" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-1" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-1" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-1" oninput="checkAndEnterValue('Probe-1', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-1" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-1" oninput="allowOnlyNumbers(this)">
+        </div>
+            
+            
+        <div class="card" id="card-2" data-probe-id="probe-2">
+            <input type="radio" name="size" id="radio-2" onclick="setCurrentProbe('Probe-2')">
+            <label for="Probe-2"><b>Probe-2</b></label>
+            <textarea id="probe-B" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-2" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-2" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-2" oninput="checkAndEnterValue('Probe-2', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-2" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-2" oninput="allowOnlyNumbers(this)">
+        </div>
+
+        <div class="card" id="card-3" data-probe-id="probe-3">
+            <input type="radio" name="size" id="radio-3" onclick="setCurrentProbe('Probe-3')">
+            <label for="Probe-3"><b>Probe-3</b></label>
+            <textarea id="probe-C" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-3" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-3" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-3" oninput="checkAndEnterValue('Probe-3', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-3" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-3" oninput="allowOnlyNumbers(this)">
+        </div>
+
+        <div class="card" id="card-4" data-probe-id="probe-4">
+            <input type="radio" name="size" id="radio-4" onclick="setCurrentProbe('Probe-4')">
+            <label for="Probe-4"><b>Probe-4</b></label>
+            <textarea id="probe-D" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-4" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-4" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-4" oninput="checkAndEnterValue('Probe-4', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-4" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-4" oninput="allowOnlyNumbers(this)">
+        </div>
+
+        <div class="card" id="card-5" data-probe-id="probe-5">
+            <input type="radio" name="size" id="radio-5" onclick="setCurrentProbe('Probe-5')">
+            <label for="Probe-5"><b>Probe-5</b></label>
+            <textarea id="probe-E" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-5" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-5" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-5" oninput="checkAndEnterValue('Probe-5', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-5" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-5" oninput="allowOnlyNumbers(this)">
+        </div>
+
+        <div class="card" id="card-6" data-probe-id="probe-6">
+            <input type="radio" name="size" id="radio-6" onclick="setCurrentProbe('Probe-6')">
+            <label for="Probe-6"><b>Probe-6</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-6" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-6" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-6" oninput="checkAndEnterValue('Probe-6', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-6" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-6" oninput="allowOnlyNumbers(this)">
+        </div>
+
+        <div class="card" id="card-7" data-probe-id="probe-7">
+            <input type="radio" name="size" id="radio-7" onclick="setCurrentProbe('Probe-7')">
+            <label for="Probe-7"><b>Probe-7</b></label>
+            <textarea id="probe-G" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-7" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-7" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-7" oninput="checkAndEnterValue('Probe-7', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-7" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-7" oninput="allowOnlyNumbers(this)">
+        </div>
+    </div>
+
+</div>
+
+
+<div class="probe2_page" id="page2">
+    <div class="container" style="margin-top: 10px;">
+        <div class="card">
+            <div class="card-image"></div>
+            <section class="container-a"><b>Probe Count</b></section>
+            <section class="container-b"><b>Coefficient</b></section>
+            <section class="container-c"><b>Probe Correction</b></section>
+            <section class="container-d"><b>High Ref.Value</b></section>
+            <section class="container-e"><b>Low Ref.Value</b></section>
+            <section class="container-f"><b>Reading</b></section>
+        </div>
+    
+        <div class="card" id="card-8" data-probe-id="probe-8">
+            <input type="radio" name="size" id="radio-8" onclick="setCurrentProbe('Probe-8')">
+            <label for="Probe-8"><b>Probe-8</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-8" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-8" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-8" oninput="checkAndEnterValue('Probe-8', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-8" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-8" oninput="allowOnlyNumbers(this)">
+        </div>
+        <div class="card" id="card-9" data-probe-id="probe-9">
+            <input type="radio" name="size" id="radio-9" onclick="setCurrentProbe('Probe-9')">
+            <label for="Probe-9"><b>Probe-9</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-9" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-9" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-9" oninput="checkAndEnterValue('Probe-9', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-9" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-9" oninput="allowOnlyNumbers(this)">
+        </div>
+        <div class="card" id="card-10" data-probe-id="probe-10">
+            <input type="radio" name="size" id="radio-10" onclick="setCurrentProbe('Probe-10')">
+            <label for="Probe-6"><b>Probe-10</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-10" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-10" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-10" oninput="checkAndEnterValue('Probe-10', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-10" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-10" oninput="allowOnlyNumbers(this)">
+        </div>
+        <div class="card" id="card-11" data-probe-id="probe-11">
+            <input type="radio" name="size" id="radio-11" onclick="setCurrentProbe('Probe-11')">
+            <label for="Probe-11"><b>Probe-11</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-11" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-11" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-11" oninput="checkAndEnterValue('Probe-11', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-11" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-11" oninput="allowOnlyNumbers(this)">
+        </div>
+        <div class="card" id="card-12" data-probe-id="probe-12">
+            <input type="radio" name="size" id="radio-12" onclick="setCurrentProbe('Probe-12')">
+            <label for="Probe-12"><b>Probe-12</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-12" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-12" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-12" oninput="checkAndEnterValue('Probe-12', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-12" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-12" oninput="allowOnlyNumbers(this)">
+        </div>
+        <div class="card" id="card-13" data-probe-id="probe-13">
+            <input type="radio" name="size" id="radio-13" onclick="setCurrentProbe('Probe-13')">
+            <label for="Probe-13"><b>Probe-13</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-13" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-13" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-13" oninput="checkAndEnterValue('Probe-13', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-13" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-13" oninput="allowOnlyNumbers(this)">
+        </div>
+        <div class="card" id="card-14" data-probe-id="probe-14">
+            <input type="radio" name="size" id="radio-14" onclick="setCurrentProbe('Probe-14')">
+            <label for="Probe-14"><b>Probe-14</b></label>
+            <textarea id="probe-F" style="max-height: 100px;"></textarea>
+            <input type="text" class="container-b" id="container-b-probe-14" oninput="allowOnlyNumbers(this)">
+            <section class="container-c">1.0000</section>
+            <input type="text" class="container-d" id="container-d-14" oninput="allowOnlyNumbers(this)">
+            <input type="text" class="container-e" readonly value="0.00" id="container-e-14" oninput="checkAndEnterValue('Probe-14', this.value),allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-f" id="container-f-14" oninput="allowOnlyNumbers(this)">
+            <input type="text" readonly class="container-g" hidden id="container-g-probe-14" oninput="allowOnlyNumbers(this)">
+        </div>
+    </div>
+    
+</div>
+
+<div class="probe1_page" id="page3">Wait For New Version......</div>
+<div class="probe1_page" id="page4">Wait For New Version......</div>
+<div class="probe1_page" id="page5">Wait For New Version......</div>
+<div class="probe1_page" id="page6">Wait For New Version......</div>
+
+<pre id="calibration-info" style="color:black; text-shadow: 2px 2px 4px white; margin-top: 5px; margin-left: 250px; font-size: 20px;">
+</pre>
+</div>
+
+
+
+
+<button onclick="captureLowReference()" id="lowReferenceBtn" type="button"><b>Low Reference</b></button>
+<button onclick="captureHighReference()" id="highReferenceBtn" type="button"><b>High Reference</b></button>
+
+<a href="{% url 'index' %}" >
+  <button type="button" id="cancel-button"><b>BACK</b></button>
+</a>
+
+<script>
+
+
+window.addEventListener('DOMContentLoaded', (event) => {
+            var inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.setAttribute('autocomplete', 'off');
+            });
+        });
+
+
+    // Call the displayPage function with page1 and the associated button when the page loads
+    window.onload = function () {
+        var defaultButton = document.getElementById('1_page');
+        displayPage('page1', defaultButton);
+    };
+
+    var previousButton; // Variable to store the previously clicked button
+
+function displayPage(pageId, button) {
+    // Hide all pages
+    var pages = document.querySelectorAll('.box-1 > div');
+    pages.forEach(function (page) {
+        page.style.display = 'none';
+    });
+
+    // Display the selected page
+    var selectedPage = document.getElementById(pageId);
+    if (selectedPage) {
+        selectedPage.style.display = 'block';
+    }
+
+    // Remove highlight from the previous button
+    if (previousButton) {
+        previousButton.classList.remove('highlight');
+        // Revert the color to the default color
+        previousButton.style.backgroundColor = ''; // or set it to the default color
+    }
+
+    // Highlight the clicked button
+    button.classList.add('highlight');
+    // Change the color of the clicked button to pink
+    button.style.backgroundColor = 'red';
+
+    // Update the reference to the previously clicked button
+    previousButton = button;
+}
+
+
+    function allowOnlyNumbers(inputElement) {
+      // Remove non-numeric characters
+      inputElement.value = inputElement.value.replace(/[^0-9,.,-]/g, '');
+    }
+
+    document.getElementById("highReferenceBtn").disabled = true;
+    document.getElementById("highReferenceBtn").style.opacity = '0.6';
+    document.getElementById("lowReferenceBtn").disabled = true;
+    document.getElementById("lowReferenceBtn").style.opacity = '0.6';
+
+
+    function checkAndEnterValue(probe, value) {
+        var radioId = "radio-" + probe.split('-')[1];
+
+        if (!document.getElementById(radioId).checked) {
+            alert("Please select the radio button for " + probe + " before entering values!");
+            // Clear the entered value to prevent further issues
+            document.getElementById("container-e-" + probe.split('-')[1]).value = "";
+        } else {
+            // Your existing logic for entering values
+        }
+    }
+    
+
+  
+let currentSelectedCard = null;
+let a = [];
+let a1 = [];
+let b = [];
+let b1 = [];
+let c = [];
+let c1 = [];
+let d = [];
+let e = [];
+
+function setCurrentProbe(probeId) {
+    // Reset previous selected card color (optional)
+    if (currentSelectedCard) {
+        currentSelectedCard.style.backgroundColor = ''; // Reset to default color
+    }
+
+    // Update currentSelectedCard to the newly selected card
+    currentSelectedCard = document.getElementById(`card-${probeId}`);
+    $('#selected-probe').text('Selected Probe: ' + probeId);
+    $('#calibration-info').text('Load probe at middle and do LOW Calibration for selected probe');
+    document.getElementById("highReferenceBtn").disabled = true;
+    document.getElementById("highReferenceBtn").style.opacity = '0.6';
+    document.getElementById("lowReferenceBtn").disabled = false;
+    document.getElementById("lowReferenceBtn").style.opacity = '1';
+
+    // Change the background color of the selected card to red
+    if (currentSelectedCard) {
+        currentSelectedCard.style.backgroundColor = 'red';
+    }
+}
+
+
+function captureLowReference() {
+	document.getElementById('calibration-info').innerText = "LOW Calibration completed. Do HIGH Calibration for selected probe";
+   document.getElementById("highReferenceBtn").disabled = false;
+   document.getElementById("highReferenceBtn").style.opacity = '1';
+  document.getElementById("lowReferenceBtn").disabled = true;
+   document.getElementById("lowReferenceBtn").style.opacity = '0.6';
+
+
+    if (currentSelectedCard) {
+        a = [];
+        a1 = [];
+
+        const containerEValue = currentSelectedCard.querySelector('.container-e').value;
+        const aValue = parseFloat(containerEValue);
+        a.push(!isNaN(aValue) ? aValue : NaN);
+
+        const a1Element = currentSelectedCard.querySelector('textarea');
+        const a1Value = parseFloat(a1Element.value);
+        a1.push(!isNaN(a1Value) ? a1Value : NaN);
+
+        console.log('Captured low reference values:', a, a1);
+
+        
+
+        // Perform actions with 'a' and 'a1' values as needed...
+    } else {
+        console.log('No card selected.');
+    }
+}
+
+function captureHighReference() {
+  document.getElementById('calibration-info').innerText = "HIGH Calibration completed for selected probes";
+  document.getElementById("highReferenceBtn").disabled = true;
+  document.getElementById("highReferenceBtn").style.opacity = '0.6';
+  document.getElementById("lowReferenceBtn").disabled = true;
+  document.getElementById("lowReferenceBtn").style.opacity = '0.6';
+  
+  if (currentSelectedCard) {
+        b = [];
+        b1 = [];
+        c = [];
+        c1 = [];
+        d = [];
+        e = [];
+
+        const containerDValue = currentSelectedCard.querySelector('.container-d').value;
+        const bValue = parseFloat(containerDValue);
+        b.push(!isNaN(bValue) ? bValue : NaN);
+
+        const b1Element = currentSelectedCard.querySelector('textarea');
+        const b1Value = parseFloat(b1Element.value);
+        b1.push(!isNaN(b1Value) ? b1Value : NaN);
+
+        if (!isNaN(b[0]) && !isNaN(b1[0]) && !isNaN(a[0]) && !isNaN(a1[0])) {
+            const cValue = b[0] - a[0];
+            const c1Value = b1[0] - a1[0];
+            c.push(cValue);
+            c1.push(c1Value);
+
+            if (c1Value !== 0) {
+                const dValue = cValue / c1Value;
+                const eValue = dValue / 1000;
+                d.push(dValue);
+                e.push(eValue);
+
+                const containerBElement = currentSelectedCard.querySelector('.container-b');
+                if (containerBElement) {
+                    containerBElement.value = eValue.toFixed(12);
+                }
+            }
+        }
+
+        console.log('Captured high reference values:', b, b1, d, c, c1, e);
+            // Get CSRF token from the cookie
+            const csrftoken = getCookie('csrftoken');
+
+            if (currentSelectedCard) {
+            const selectedProbeId = currentSelectedCard.id.split('-')[1]; // Extracting the probe ID from the card ID
+
+        // Only send the selected card ID and captured values to the backend
+        $.ajax({
+            type: 'POST',
+            url: '/probe/',  // Update with your actual backend endpoint
+            data: {
+                'probeId': 'probe-'+ selectedProbeId,
+                'a':a,
+                'a1':a1,
+                'b': b,
+                'b1': b1,
+                'e': e
+            },
+            beforeSend: function(xhr, settings) {
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            },
+            success: function(response) {
+
+                            // Retrieve the selected probe card using the probe_id
+                const selectedCard = document.querySelector(`.card[data-probe-id="${response.probe_id}"]`);
+
+            if (selectedCard) {
+                const containerG = selectedCard.querySelector('.container-g');
+
+                // Step 1: Clear the previous value in .container-g
+                containerG.value = '';  // Clear the value
+
+                // Step 2: Use setTimeout to wait for 2 seconds before updating the value
+                setTimeout(function() {
+                    // Update the .container-g value with the new low_count value
+                    containerG.value = response.low_count ? response.low_count.toFixed(12) : '';
+                    console.log('Updated container-g for Probe ID:', response.probe_id, 'with Low Count:', response.low_count);
+                }, 1000);  // Wait for 2 seconds before updating
+            } else {
+                console.error('Selected card not found for probe ID:', response.probe_id);
+            }
+                // Handle the response from the server
+                console.log('Retrieved values:');
+                console.log('Low Reference:', response.probe_id);
+                console.log('Low Count:', response.low_count);
+                console.log('Coefficient:', response.coefficient);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', error);
+            }
+        });
+
+            // Perform actions with 'a' and 'a1' values as needed...
+            } else {
+            console.log('No card selected.');
+}   
+}
+}
+
+
+
+
+// Parse the lowCount and probeCoefficients JSON objects
+const lowCount = JSON.parse('{{ low_count_json|escapejs }}');
+const probeCoefficients = JSON.parse('{{ probe_coefficients_json|escapejs }}');
+
+// Function to set the coefficient and lowCount values in the container-b and container-g elements
+function setCoefficients() {
+    // Select all card elements
+    const cards = document.querySelectorAll('.card');
+
+    cards.forEach(card => {
+        const probeId = card.getAttribute('data-probe-id');
+        const containerB = card.querySelector('.container-b');
+        const containerG = card.querySelector('.container-g');
+
+        // Check if containerB exists before setting the value
+        if (containerB) {
+            // If the probeId exists in the probeCoefficients object, set the value in container-b
+            if (probeCoefficients.hasOwnProperty(probeId)) {
+                containerB.value = probeCoefficients[probeId].toFixed(14);
+            } else {
+                containerB.value = ''; // Optional: Set to empty if no coefficient found
+            }
+        }
+
+        // Check if containerG exists before setting the value
+        if (containerG) {
+            // If the probeId exists in the lowCount object, set the value in container-g
+            if (lowCount.hasOwnProperty(probeId)) {
+                containerG.value = lowCount[probeId];
+            } else {
+                containerG.value = ''; // Optional: Set to empty if no low count found
+            }
+        }
+    });
+}
+
+
+// Call the function to set coefficients initially
+setCoefficients();
+
+
+
+
+let calculateEnabled = true;
+
+// Function to calculate and display results
+function calculateDisplay() {
+    if (!calculateEnabled) return;
+
+    // Get all cards
+    const cards = document.querySelectorAll('.card');
+
+    // Loop through each card
+    cards.forEach(card => {
+        // Find the real data element within the card
+        const realDataElement = card.querySelector('textarea');
+        if (realDataElement) {
+            // Get the count from the real data element
+            const count = parseFloat(realDataElement.value) || 0;
+
+            // Find the coefficient and lowCount elements within the card
+            const coefficientElement = card.querySelector('.container-b');
+            const lowCountElement = card.querySelector('.container-g');
+            const containerFElement = card.querySelector('.container-f');
+
+            if (coefficientElement && lowCountElement && containerFElement) {
+                // Get the coefficient and lowCount values
+                const coefficient = parseFloat(coefficientElement.value) || 0;
+                const lowCount = parseFloat(lowCountElement.value) || 0;
+
+                // Calculate the output
+                const output = ((count - lowCount) * (coefficient * 1000));
+
+                // Update the container-f element with the calculated output
+                containerFElement.value = output.toFixed(4); // Adjust precision as needed
+            }
+        }
+    });
+
+    // Special handling for the currently selected card
+    if (currentSelectedCard) {
+        const realDataElement = currentSelectedCard.querySelector('textarea');
+        if (realDataElement) {
+            const count = parseFloat(realDataElement.value) || 0;
+
+            const coefficientElement = currentSelectedCard.querySelector('.container-b');
+            const lowCountElement = currentSelectedCard.querySelector('.container-g');
+            const containerFElement = currentSelectedCard.querySelector('.container-f');
+
+            if (coefficientElement && lowCountElement && containerFElement) {
+                const coefficient = parseFloat(coefficientElement.value) || 0;
+                const lowCount = parseFloat(lowCountElement.value) || 0;
+
+                // Calculate the output
+                const output = ((count - lowCount) * (coefficient * 1000));
+
+                // Update the container-f element with the calculated output
+                containerFElement.value = output.toFixed(4); // Adjust precision as needed
+            }
+        }
+    }
+}
+
+// Call the function initially
+calculateDisplay();
+
+// Update the interval to 500 milliseconds
+setInterval(calculateDisplay, 500);
+
+// Add an event listener to the textarea elements to call calculateDisplay() whenever they are changed
+document.querySelectorAll('textarea').forEach(textarea => {
+    textarea.addEventListener('input', calculateDisplay);
+});
+
+// Add event listeners to cards to set the selected card
+document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+        currentSelectedCard = card;
+        calculateDisplay(); // Recalculate when the selected card changes
+    });
+});
+
+
+
+// Function to log data by probe ID in ascending order
+function logProbeData() {
+    // Create an array of probe IDs and sort it
+    const sortedProbeIds = Object.keys(probeCoefficients).sort();
+
+    // Log the sorted data
+    sortedProbeIds.forEach(probeId => {
+        console.log(`Probe ID: ${probeId}`);
+        console.log(`Coefficient: ${probeCoefficients[probeId]}`);
+        console.log(`Low Count: ${lowCount[probeId]}`);
+        console.log('-----------------------');
+    });
+}
+
+// Call the function to log data
+logProbeData();
+
+
+
+
+// Set interval to update the result every 1000 milliseconds (1 second)
+
+
+// Loop through each radio button to add event listeners
+for (let i = 1; i <= 14; i++) {
+    const radioId = `radio-${i}`;
+    document.getElementById(radioId).addEventListener('click', function () {
+        setCurrentProbe(i);
+    });
+}
+
+// Function to get the CSRF token from the cookie
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+
+$(document).ready(function () {
+            const ws = new WebSocket('ws://localhost:8000/ws/comport/');
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    const channels = data.message.match(/[A-K]\+[^A-K]*/g);
+                    if (channels) {
+                        channels.forEach(channel => {
+                            const channelId = channel.charAt(0);
+                            const channelData = channel.substr(2); // Get the data after '+'
+                            $(`#probe-${channelId}`).val(channelData);
+                        });
+                    }
+                }
+            };
+        });
+
+</script>
+
+{% endblock %}
+
+
+
+
