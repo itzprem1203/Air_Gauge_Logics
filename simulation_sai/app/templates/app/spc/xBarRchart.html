@@ -84,22 +84,32 @@
 }
 #prevButton{
             width: 80px;
-            height: 30px;
-            margin-left: 0px;
+            height: 35px;
+            margin-top: -35px;
+            float: right;
             background-color: red;
             color: white;
             font-weight: bold;
         }
-        #pdf_btn{
-            margin-left:1050px;
-            width: 150px;
-            height: 30px;
-            background-color: red;
-            color: white;
-            font-weight: bold;
-            
-          
-        }
+        #mail_btn {
+    width: 150px;
+
+    height: 35px;
+    margin-top: -35px;
+    background-color: green;
+    color: white;
+    font-weight: bold;
+    margin-left: 600px;
+}
+
+#pdf_btn {
+    width: 150px;
+    height: 35px;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    float: left;
+}
         #popupMessage{
     display: none;
     position: fixed; 
@@ -134,10 +144,23 @@
                 <div id="heading">X BAR R-CHART</div>
                 <form id="exportForm" method="post" action="{% url 'xBarRchart' %}" style="margin-top:-25px ;">
                     {% csrf_token %}
-                    <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf" >PDF CONVERSION</button>
+                    <div class="button-container">
+                        <!-- Send Mail Button (Left Side) -->
+                        <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
+                        
+                        <!-- Email Selection Dropdown -->
+                        <label for="email" class="no-pdf"></label>
+                        <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 35px; ">
+                            <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
+                            <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
+                        </select>
+                    
+                        <!-- PDF Conversion Button (Right Side) -->
+                        <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
+                    </div>
                     
                 </form>
-                <div style="margin-top: -30px;"><button id="prevButton" class="no-pdf" >BACK</button></div>  
+                <div><button id="prevButton" class="no-pdf" >BACK</button></div>  
             </div>
 
          <!-- Add this in your consolidateSrNo.html -->

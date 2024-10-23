@@ -101,7 +101,15 @@ Mastering Page
          #highMasterBtn{    
              margin-top: 10px;   
          }
-         
+         #back-btn{
+             background-color: red;
+             color:black;
+             height: 40px;
+             width: 80px;
+             float: right;
+             margin-top: -35px;
+               
+         }
          
         
  
@@ -147,6 +155,7 @@ Mastering Page
          margin-left: 1000px;
  
         }
+
 
 
 .reset-button {
@@ -221,9 +230,11 @@ Mastering Page
 <div class="full-page-box" style="overflow-x: auto;overflow-y:auto;">
     <div id="clock">
         <div class="box" id="clock-box"></div>
+        <a href="{% url 'measurebox' %}" >
+            <button type="button" id="back-btn"><b>Back</b></button>
+            </a>
     </div>
-    
-   
+        
 
     <div class="left-box">
         <label for="partModel">PART MODEL:</label>

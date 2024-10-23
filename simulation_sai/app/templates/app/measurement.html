@@ -503,17 +503,17 @@ input[type=checkbox] {
       </div><br>
   
 
-<textarea id="probe-A"></textarea>
-    <textarea id="probe-B"></textarea>
-    <textarea id="probe-C"></textarea>
-    <textarea id="probe-D"></textarea>
-    <textarea id="probe-E"></textarea>
-    <textarea id="probe-F"></textarea>
-    <textarea id="probe-G"></textarea>
-    <textarea id="probe-H"></textarea>
-    <textarea id="probe-I"></textarea>
-    <textarea id="probe-J"></textarea>
-    <textarea id="probe-K"></textarea>
+<textarea id="probe-A" style="display: none;"></textarea>
+    <textarea id="probe-B" style="display: none;"></textarea>
+    <textarea id="probe-C" style="display: none;"></textarea>
+    <textarea id="probe-D" style="display: none;"></textarea>
+    <textarea id="probe-E" style="display: none;"></textarea>
+    <textarea id="probe-F" style="display: none;"></textarea>
+    <textarea id="probe-G" style="display: none;"></textarea>
+    <textarea id="probe-H" style="display: none;"></textarea>
+    <textarea id="probe-I" style="display: none;"></textarea>
+    <textarea id="probe-J" style="display: none;"></textarea>
+    <textarea id="probe-K" style="display: none;"></textarea>
 
 
 
@@ -785,7 +785,16 @@ $(".attribute_input_box").each(function(index) {
         parameterAttributes.push(attributeParam);
         attributeStatuses.push(attributeStatus);
     }
+    if(!attributeStatus){
+                allStatusValid=false;
+                return false;
+    }
 });
+
+if(!allStatusValid){
+    showCustomAlert("YOU ARE NOT PROPERLY CALCULATED.DO CORRECT CALCLATION AND THEN SAVE")
+    return;
+}
 
 // Check if parameterAttributes and attributeStatuses have entries before adding to formDataArray
 if (parameterAttributes.length > 0 && attributeStatuses.length > 0) {
@@ -2208,14 +2217,14 @@ console.log("step_no_values:",step_no_values);
 
             // Set a timeout for the first alert
             setTimeout(() => {
-                if (confirm("Timewise alert: It's time for mastering! Click OK to go to the master page.")) {
+                alert("Timewise alert: It's time for mastering! Click OK to go to the master page."); {
                     // Redirect to the master page if OK is clicked
                     window.location.href = '/master/'; // Replace '/master-page' with the actual URL of your master page
                 }
 
                 // Set intervals for subsequent alerts
                 setInterval(() => {
-                    if (confirm("Timewise alert: It's time for mastering! Click OK to go to the master page.")) {
+                    alert("Timewise alert: It's time for mastering! Click OK to go to the master page."); {
                         // Redirect to the master page if OK is clicked
                         window.location.href = '/master/'; // Replace '/master-page' with the actual URL of your master page
                     }
@@ -2232,7 +2241,7 @@ console.log("step_no_values:",step_no_values);
             saveButton.addEventListener('click', () => {
                 clickCount++;
                 if (clickCount === componentNo) {
-                    if (confirm("Componentwise alert: The button has been clicked the specified number of times! Click OK to go to the master page.")) {
+                    alert("Timewise alert: It's time for mastering! Click OK to go to the master page."); {
                         // Redirect to the master page if OK is clicked
                         window.location.href = '/master/'; // Replace '/master/' with the actual URL of your master page
                     }

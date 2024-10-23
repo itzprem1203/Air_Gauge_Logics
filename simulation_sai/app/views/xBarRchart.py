@@ -5,13 +5,21 @@ import plotly.offline as pyo
 from django.shortcuts import render
 import numpy as np
 import pandas as pd
-from app.models import MeasurementData, X_Bar_R_Chart
+from app.models import MeasurementData, X_Bar_R_Chart,CustomerDetails
 from django.utils import timezone
 from datetime import datetime
 from django.db.models import Q
 from weasyprint import HTML, CSS
 from django.http import HttpResponse
 import os
+import base64
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+from io import BytesIO
+
 
 def calculate_control_limits(x_bars, ranges, sample_size):
     # Define constants for different sample sizes
@@ -62,13 +70,16 @@ def calculate_cp_cpk(x_bars,ranges, usl, lsl):
 
 
 def xBarRchart(request): 
-    if request.method == 'POST' and request.POST.get('export_type') == 'pdf':
+    if request.method == 'POST':
+        export_type = request.POST.get('export_type')
+        recipient_email = request.POST.get('recipient_email')
+        
         # Generate the same context as before
         context = generate_xBarRchart_context(request, pdf=True)
-
+        
         # Render the HTML to a string
         html_string = render(request, 'app/spc/xBarRchart.html', context).content.decode('utf-8')
-
+        
         # Define the CSS for landscape orientation
         css = CSS(string='''
             @page {
@@ -76,7 +87,7 @@ def xBarRchart(request):
                 margin: 1cm; /* Adjust margins as needed */
             }
             body {
-                transform: scale(0.8); /* Adjust scale as needed */
+                transform: scale(0.9); /* Adjust scale as needed */
                 transform-origin: top left; /* Set origin for scaling */
                 width: 1200px; /* Width of the content */
             }
@@ -84,29 +95,56 @@ def xBarRchart(request):
                 display: none;
             }
         ''')
-
+        
         # Convert HTML to PDF
         pdf_file = HTML(string=html_string).write_pdf(stylesheets=[css])
+        pdf_memory = BytesIO(pdf_file)
+        
+        if export_type == 'pdf':
+            # Define the path to save the PDF (e.g., Downloads folder)
+            downloads_folder = os.path.join(os.path.expanduser('~'), 'Downloads')
+            pdf_filename = f"Xbar_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+            pdf_path = os.path.join(downloads_folder, pdf_filename)
+            
+            # Save the PDF file to the filesystem
+            with open(pdf_path, 'wb') as pdf_output:
+                pdf_output.write(pdf_file)
 
-        # Define the path to save the PDF (e.g., Downloads folder)
-        downloads_folder = os.path.join(os.path.expanduser('~'), 'Downloads')  # Change to your desired path
-        pdf_filename = f"XbarRchart_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
-        pdf_path = os.path.join(downloads_folder, pdf_filename)
+            # Return the PDF file as a download
+            response = HttpResponse(pdf_file, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
+            success_message = "PDF generated successfully!"
+            context['success_message'] = success_message
+            return render(request, 'app/spc/xBarRchart.html', context)
+        
+        elif export_type == 'send_mail':
+            # Send the PDF via email
+            pdf_filename = f"xBarRchart_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+            try:
+                send_mail_with_pdf(pdf_memory.getvalue(), recipient_email, pdf_filename)
+                success_message = f"PDF sent successfully to {recipient_email}!"
+            except Exception as e:
+                success_message = f"Error sending email: {str(e)}"
+            
+            context['success_message'] = success_message
+            return render(request, 'app/spc/xBarRchart.html', context)
 
-        # Save the PDF file to the filesystem
-        with open(pdf_path, 'wb') as pdf_output:
-            pdf_output.write(pdf_file)
-
-        # Return a response
-        response = HttpResponse(pdf_file, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
-        success_message = "PDF generated successfully!"
-        context['success_message'] = success_message
-        return render(request, 'app/spc/xBarRchart.html', context)
 
     elif request.method == 'GET':
         # Generate the context for rendering the histogram page
+        email_1 = CustomerDetails.objects.values_list('primary_email', flat=True).first() or 'No primary email'
+        print('your primary mail id from server to front end now:', email_1)
+
+        email_2 = CustomerDetails.objects.values_list('secondary_email', flat=True).first() or 'No secondary email'
+        print('your secondary mail id from server to front end now:', email_2)
+
         context = generate_xBarRchart_context(request, pdf=False)
+        if context is None:
+            context = {}
+    
+        context['email_1'] = email_1
+        context['email_2'] = email_2
+
         return render(request, 'app/spc/xBarRchart.html', context)
 
 def generate_xBarRchart_context(request, pdf=False):
@@ -347,7 +385,36 @@ def generate_xBarRchart_context(request, pdf=False):
             'cpk':cpk
         }
 
-   
+def send_mail_with_pdf(pdf_content, recipient_email, pdf_filename):
+    sender_email = "itzprem1203@gmail.com"
+    sender_password = "dxnb lcho buxy yang"
+    subject = "xBarRchart Report PDF"
+    body = "Please find the attached PDF report."
+
+    # Setup email parameters
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
+    msg['Subject'] = subject
+
+    # Attach the email body
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Attach the PDF file
+    attachment = MIMEBase('application', 'octet-stream')
+    attachment.set_payload(pdf_content)
+    encoders.encode_base64(attachment)
+    attachment.add_header('Content-Disposition', f'attachment; filename="{pdf_filename}"')
+    msg.attach(attachment)
+
+    # Send the email using SMTP
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, recipient_email, msg.as_string())
+    except Exception as e:
+        raise e  # Let the exception bubble up to the view function
 
 
 """

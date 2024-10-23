@@ -16,7 +16,7 @@ def encode_html_to_base64(file_path):
 
 # Path to the HTML file
 
-html_file_path = r"C:\Users\itzpr.DESKTOP-EUQC32B\Desktop\simulation_sai\simulation_sai\app\templates\app\spc\histogram.html"
+html_file_path = r"C:\Users\itzpr.DESKTOP-EUQC32B\Desktop\simulation_sai\simulation_sai\app\templates\app\spc\xBarRchart.html"
 
 # Encode the HTML file
 encoded_html = encode_html_to_base64(html_file_path)
