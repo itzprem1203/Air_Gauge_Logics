@@ -5,6 +5,8 @@
     <title>Login Page</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css">
 </head>
@@ -38,7 +40,7 @@
     <div class="login" style="margin-left: 800px;">
         <div class="loginform">
             <h2>Login</h2> 
-            <form method="post" id="login-form">
+            <form method="post">
                 {% csrf_token %}
                 <div class="tbox">
                     <i class="fa fa-user mx-3"></i>
@@ -63,20 +65,17 @@
         </div>
     </div>
 
-
     <h1 class="center-align"><b>Gauge Logic DAQ - SPC</b></h1>
     <h1 class="left-align">Web: www.gaugelogic.com<br>E-Mail: sales@gaugelogic.com</h1>
     <h1 class="right-align">-Accuracy is Our Moto & Passion</h1>
     <h1 class="right-align-1">Sales : +91 7448411234</h1>
 
-    <input type="text" id="db_port" value="{{ comport_com_port }}">
+    <input type="text" id="dbs_port" value="{{ comport_com_port }}">
     <input type="text" id="com_ports" value="{{ ports_string }}">
     <input type="text" id="baud_rate" value="{{ comport_baud_rate }}">
     <input type="text" id="parity" value="{{ comport_parity }}">
     <input type="text" id="stopbit" value="{{ comport_stopbit }}">
     <input type="text" id="databit" value="{{ comport_databit }}">
-
-
     <div class="box" id="clock-box" hidden></div>
 
     <div style="margin-left: 800px; margin-top: 20px;">
@@ -95,7 +94,10 @@
     <script>
 
 
-///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+
+
 let alertShown = false; // Track if the alert has been shown
 
 function updateClock() {
@@ -121,6 +123,9 @@ function updateClock() {
     // Display current date and time in the clock box
     document.getElementById("clock-box").innerHTML = currentDateFormatted;
 
+    console.log('backupDate:', backupDate);
+    console.log('confirm:', confirmValue);
+    console.log('your id is this:', id_value);
 
     if (confirmValue === 'False' && !alertShown) {
         // If the current date and time >= backup date, show the alert box
@@ -225,11 +230,113 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Call the function when the page loads
 window.onload = function() {
     updateClock(); // Start the clock display
+
+    // Get the input elements
+    const dbsPortInput = document.getElementById('dbs_port');
+    const comPortsInput = document.getElementById('com_ports');
+
+    // Check if the two values are equal on page load
+    if (dbsPortInput.value === comPortsInput.value) {
+        console.log('COM ports are equal');
+    } else {
+        console.log('COM ports are not equal');
+    }
+
+
 };
 
+    // Add event listener to the login button
+    document.getElementById('login-button').addEventListener('click', function(event) {
+        // Prevent the default form submission
+        event.preventDefault();
+
+        // Get the username and password values
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Validate username and password (You can modify this check based on your actual validation)
+        if (username === '' || password === '') {
+            console.log('Please enter both username and password.');
+            return;
+        }
+
+        // Check if the two input values are equal
+        const currentDbsPortValue = dbsPortInput.value;
+        const currentComPortsValue = comPortsInput.value;
+
+        if (currentDbsPortValue === currentComPortsValue) {
+            console.log('Starting serial communication...');
+            startSerialCommunication(); // Start serial communication only if ports are equal
+        } else {
+            console.log('COM ports are not equal, cannot start serial communication.');
+        }
+
+        // Here you can submit the form if you are validating username/password on the server
+        // Uncomment the line below if you want to submit the form to the server
+        // document.querySelector('form').submit();
+    });
+
+function startSerialCommunication() {
+    const ws = new WebSocket('ws://localhost:8000/ws/comport/');
+
+    // Define a variable to hold the data to be sent later
+    let dataToSend = null;
+
+    ws.onopen = function() {
+        console.log('WebSocket connection established.');
+
+        // If there's data to send, send it now
+        if (dataToSend) {
+            ws.send(dataToSend);
+            dataToSend = null; // Clear the data after sending
+        }
+    };
+
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        if (data.message) {
+            $('#serial-data-display').val(function(i, text) {
+                return text + data.message;
+            });
+            scrollToBottom();
+        }
+    };
+
+    // Assuming you have these values in your HTML
+    const comPort = document.getElementById('dbs_port').value;
+    const baudRate = document.getElementById('baud_rate').value; // Adjust this as necessary
+    const parity = document.getElementById('parity').value; // Adjust this as necessary
+    const stopbit = document.getElementById('stopbit').value; // Adjust this as necessary
+    const databit = document.getElementById('databit').value; // Adjust this as necessary
+
+    // Prepare the data to send
+    dataToSend = JSON.stringify({
+        command: 'start_serial',
+        com_port: comPort,
+        baud_rate: baudRate,
+        parity: parity,
+        stopbit: stopbit,
+        databit: databit
+    });
+
+    // If the WebSocket is already open, send the data immediately
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(dataToSend);
+        dataToSend = null; // Clear the data after sending
+    }
+}
+
+function scrollToBottom() {
+    const textarea = $('#serial-data-display');
+    textarea.scrollTop(textarea[0].scrollHeight);
+}
+
+// Clear the received data every 0.5 seconds
+setInterval(function() {
+    $('#serial-data-display').val('');
+}, 500);
 
 
 

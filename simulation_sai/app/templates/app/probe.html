@@ -699,22 +699,30 @@ function getCookie(name) {
 
 
 $(document).ready(function () {
-            const ws = new WebSocket('ws://localhost:8000/ws/comport/');
-            
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.message) {
-                    const channels = data.message.match(/[A-K]\+[^A-K]*/g);
-                    if (channels) {
-                        channels.forEach(channel => {
-                            const channelId = channel.charAt(0);
-                            const channelData = channel.substr(2); // Get the data after '+'
-                            $(`#probe-${channelId}`).val(channelData);
-                        });
-                    }
+    const ws = new WebSocket('ws://localhost:8000/ws/comport/');
+    
+    // General function to process WebSocket messages with a given pattern
+    function processWebSocketMessage(pattern) {
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.message) {
+                const channels = data.message.match(pattern);
+                if (channels) {
+                    channels.forEach(channel => {
+                        const channelId = channel.charAt(0);
+                        const channelData = channel.substr(2); // Get the data after '+' or '-'
+                        $(`#probe-${channelId}`).val(channelData);
+                    });
                 }
-            };
-        });
+            }
+        };
+    }
+    
+    // Call the function with the specific patterns
+    processWebSocketMessage(/[A-K]\+[^\+A-K]*/g); // Match pattern with "+"
+    processWebSocketMessage(/[A-K]\-[^\-A-K]*/g); // Match pattern with "-"
+});
+        
 
 </script>
 

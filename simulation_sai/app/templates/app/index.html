@@ -202,11 +202,11 @@
 
                 // Enable links to allowed pages for "o"
                 document.querySelector('.image-container.image-3 a').setAttribute('href', '/measurebox/');
-                document.querySelector('.image-container.image-4 a').setAttribute('href', '/utility/');
                 document.querySelector('.image-container.image-5 a').setAttribute('href', '/report/');
+                document.querySelector('.image-container.image-6 a').setAttribute('href', '/spc/');
 
                 // Disable links to other pages
-                var disabledLinks = document.querySelectorAll('.image-container a:not([href="/measurebox/"]):not([href="/utility/"]):not([href="/report/"])');
+                var disabledLinks = document.querySelectorAll('.image-container a:not([href="/measurebox/"]):not([href="/report/"]):not([href="/spc/"])');
                 disabledLinks.forEach(function(link) {
                     link.addEventListener('click', function(event) {
                         event.preventDefault(); // Prevent default link behavior
@@ -224,11 +224,12 @@
                 document.querySelector('.image-container.image-8 a').setAttribute('href', '/comport/');
                 document.querySelector('.image-container.image-1 a').setAttribute('href', '/probe/');
                 document.querySelector('.image-container.image-2 a').setAttribute('href', '/parameter/');
+                document.querySelector('.image-container.image-6 a').setAttribute('href', '/spc/');
 
 
                 // Disable links to other pages
                 var disabledLinks = document.querySelectorAll 
-                ('.image-container a:not([href="/measurebox/"]):not([href="/utility/"]):not([href="/report/"]):not([href="/comport/"]):not([href="/probe/"]):not([href="/parameter/"])');
+                ('.image-container a:not([href="/measurebox/"]):not([href="/utility/"]):not([href="/report/"]):not([href="/comport/"]):not([href="/probe/"]):not([href="/parameter/"]):not([href="/spc/"])');
                 disabledLinks.forEach(function(link) {
                     link.addEventListener('click', function(event) {
                         event.preventDefault(); // Prevent default link behavior

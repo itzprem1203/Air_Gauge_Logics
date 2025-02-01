@@ -68,6 +68,33 @@
     <script>
 
 document.getElementById('start-button').addEventListener('click', function() {
+    // Collect form data
+    const formData = {
+        com_port: document.getElementById('com_port').value,
+        baud_rate: document.getElementById('baud_rate').value,
+        parity: document.getElementById('parity').value,
+        stopbit: document.getElementById('stopbit').value,
+        databit: document.getElementById('databit').value
+    };
+
+    // Send AJAX POST request
+    fetch('{% url "comport" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'  // Django CSRF token
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Process the server response here
+        alert(data.message);
+    })
+    .catch(error => console.error('Error:', error));
+});
+
+document.getElementById('start-button').addEventListener('click', function() {
         // Get the selected baud rate
         var baudRateSelect = document.getElementById('baud_rate');
         var selectedBaudRate = baudRateSelect.value;

@@ -43,8 +43,8 @@ def create_new_backup_setting(existing_backup_date, confirm_value):
     if confirm_value == 'True':  # Check if the backup is confirmed
         time.sleep(2)  # Delay for 2 seconds
 
-        # Parse the existing backup date
-        existing_date = datetime.strptime(existing_backup_date, '%d-%m-%Y %I:%M:%S %p')  # Adjust format as needed
+        # Parse the existing backup date (ensure the input format is correct)
+        existing_date = datetime.strptime(existing_backup_date, '%d-%m-%Y %I:%M:%S %p')
 
         # Call the backup function to save to .xlsx format
         backup_database_to_xlsx()
@@ -53,13 +53,19 @@ def create_new_backup_setting(existing_backup_date, confirm_value):
         new_month = existing_date.month + 1 if existing_date.month < 12 else 1
         new_year = existing_date.year if existing_date.month < 12 else existing_date.year + 1
 
+        # Replace with the new month and year, keeping other components the same
         new_backup_date = existing_date.replace(month=new_month, year=new_year)
-        print('Your new backup_date is this:', new_backup_date)
 
-        # Create a new BackupSettings with confirm_backup set to False
+        # Format the new backup date to the desired format (dd-mm-yy hh:mm:ss AM/PM)
+        formatted_new_backup_date = new_backup_date.strftime('%d-%m-%Y %I:%M:%S %p')
+
+        # Print the new formatted backup date
+        print('Your new backup_date is this:', formatted_new_backup_date)
+
+        # Create a new BackupSettings record with the new date and confirm_backup set to False
         BackupSettings.objects.create(
-            backup_date=new_backup_date.strftime('%d-%m-%Y %I:%M:%S %p'),  # Format as needed
-            confirm_backup=False  # Set to False for the new record
+            backup_date=formatted_new_backup_date,  # Save the formatted date
+            confirm_backup=False  # Set confirm_backup to False for the new record
         )
 
 def backup_database_to_xlsx():
