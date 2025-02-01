@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Parameterwise Report</title>
+    <title>Master Report</title>
 
     <style>
         .data-box {
@@ -66,7 +66,7 @@
 .dropdown {
             position: absolute;
             top: 10px;
-            right: 50px;
+            margin-left: 50px;
             display: inline-block;
         }
         .dropdown-content {
@@ -174,16 +174,14 @@
     margin: auto;
     border: 2px solid black;
     margin-top: 0px;
-}     
-
+}
     </style>
 </head>
 <body>
-    
     <div class="container">
         <div class="container-1">
             <div id="heading"></div>
-            <form id="exportForm" method="post" action="{% url 'paraReport' %}" style="margin-top:-25px ;">
+            <form id="exportForm" method="post" action="{% url 'masterReport' %}" style="margin-top:-25px ;">
                 {% csrf_token %}
                 <div class="button-container">
                     <!-- Send Mail Button (Left Side) -->
@@ -208,7 +206,11 @@
     
     
      <!-- Add this in your consolidateSrNo.html -->
-    <div id="popupMessage" class="no-pdf"></div>  
+    <div id="popupMessage" class="no-pdf"></div>
+
+
+    
+    
     
     <script>
 
@@ -235,8 +237,8 @@ if (successMessage) {
     </script>
     
     <table class="first-table">
-        <h1 id="h1">Parameter Report</h1>
-        {% for data in parameterwise_values %}
+        <h1 id="h1">Master Report</h1>
+        {% for data in master_report_values %}
         <tr>
             <td>
                 <span class="label">PARTMODEL:</span>
@@ -268,10 +270,7 @@ if (successMessage) {
                 <span class="label">VENDOR CODE:</span>
                 <span class="value">{{ data.vendor_code }}</span>
             </td>
-            <td>
-                <span class="label">JOB NO:</span>
-                <span class="value">{{ data.job_no }}</span>
-            </td>
+           
             <td>
                 <span class="label">SHIFT:</span>
                 <span class="value">{{ data.shift }}</span>

@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <title>Consolidate Report</title>
 
     <style>
+
+        body{
+            border: 2px solid white;
+        }
+
+
         .data-box {
             border: 1px solid #ccc;
             padding: 10px;
@@ -98,13 +105,44 @@
         .table-striped tbody tr:nth-of-type(odd) {
             background-color: #f9f9f9; /* Alternate row background color */
         }
-        #prevButton{
-            width: 80px;
-            background-color: red;
-            color: white;
-            
-        }
+#prevButton{
+    width: 80px;
+    height: 35px;
+    margin-top: -35px;
+    float: right;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+}
 
+#excel_btn{
+    width: 150px;
+    height: 35px;
+    margin-top: -35px;
+    margin-left: 60px;
+    background-color: orange;
+    color: white;
+    font-weight: bold;
+}
+
+#mail_btn {
+    width: 150px;
+    height: 35px;
+    margin-top: -35px;
+    background-color: green;
+    color: white;
+    font-weight: bold;
+    margin-left: 200px;
+}
+
+#pdf_btn {
+    width: 150px;
+    height: 35px;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    float: left;
+}
 #popupMessage{
     display: none;
     position: fixed; 
@@ -121,42 +159,89 @@
     border: 1px solid black ; 
     padding: 10px;
     z-index: 1000;
-}       
+}
 
+.container-1{
+    height: 35px;
+    background-color: blue;
+}
+
+
+#heading{
+    text-align: center;
+    font-weight: bold;
+    background-color: blue;
+    color: white;
+    height: 25px;
+    margin-top: 0px;
+
+}
+
+.container {
+    margin: auto;
+    border: 2px solid black;
+    margin-top: 0px;
+}
+
+
+#loading_spinner{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 5vw;
+    color: rgb(1,77,1);
+    z-index:9999;
+}
+
+.fa-spinner{
+    margin-top: 10%;
+    margin-right: 20px;
+}
     </style>
 </head>
 <body>
-    <button id="prevButton" class="arrow-button no-pdf">⬅</button>
 
-<div class="dropdown no-pdf" id="dropdown">
-    <div class="dropdown-content no-pdf" id="dropdownContent">
-        <form id="exportForm" class="no-pdf" method="post" action="{% url 'srno' %}">
-            {% csrf_token %}
-            <label for="email" class="no-pdf"></label>
-            <select name="recipient_email" class="no-pdf" id="recipientEmail">
-                <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
-                <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
-            </select>
-            <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="pdf">Export to PDF</button>
-            
-            <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail">Send Mail</button>
-            <button type="submit" class="no-pdf" name="export_type" onclick="exportToExcel(event)" value="excel">Export to Excel</button>
-        </form>
+    <div id="loading_spinner" style="display: none;">
+        <i class="fsa fa-spinner fa-spin"></i>
+        </div>
+    <div class="container">
+        <div class="container-1">
+            <div id="heading"></div>
+            <form id="exportForm" method="post" action="{% url 'srno' %}" style="margin-top:-25px ;">
+                {% csrf_token %}
+                <div class="button-container">
+                    <!-- Send Mail Button (Left Side) -->
+                    <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
+                    
+                    <!-- Email Selection Dropdown -->
+                    <label for="email" class="no-pdf"></label>
+                    <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 35px; ">
+                        <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
+                        <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
+                    </select>
+                
+                    <!-- PDF Conversion Button (Right Side) -->
+                    <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
+                    <button type="submit" class="excel no-pdf" name="export_type" id="excel_btn" onclick="exportToExcel(event)" value="excel">Export to Excel</button>
+                </div>
+                
+            </form>
+            <div><button id="prevButton" class="no-pdf" >BACK</button></div>  
+        </div>
 
-    </div>
-    <button id="save_btn" class="no-pdf" onclick="toggleDropdown()">&#8285;</button>
-</div>
-   
+ 
 
-<!-- Add this in your consolidateSrNo.html -->
-<div id="popupMessage" class="no-pdf">
-</div>
+     <!-- Add this in your consolidateSrNo.html -->
+<div id="popupMessage" class="no-pdf"></div>
+
 
 <script>
 
     function hideDropdown() {
         document.getElementById("dropdown").style.display = "none";
     }
+
 
   // Get the success message from the context if it exists
 var successMessage = "{{ success_message|escapejs }}";  // Ensure safe rendering of message
@@ -259,6 +344,8 @@ setTimeout(function() {
         </div>
     </div>
 {% endif %}
+
+</div>
 
 <!-- JavaScript to dynamically update status counts and print to console -->
 <script>

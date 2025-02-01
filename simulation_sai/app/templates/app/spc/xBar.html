@@ -20,12 +20,15 @@
         }
 
         #heading{
-            margin-top: 0px;
-            color:white;
-           background-color: blue;
-            text-align: center;
-           
-        }
+        text-align: center;
+        font-weight: bold;
+        font-size: 20px;
+        background-color: blue;
+        color: white;
+        height: 25px;
+        margin-top: 0px;
+
+    }
 
         .details {
             display: flex;
@@ -74,29 +77,32 @@
             table-layout: auto; /* Allow the table to adjust its layout based on content */
             border-collapse: collapse; /* Collapse table borders */
         }
-        #prevButton{
-            width: 70px;
-            height: 40px;
-            background-color: red;
-            color: white;
-            font-weight: bold;
-        }
-
-#mail_btn {
-    width: 150px;
-    height: 40px;
-    background-color: blue;
-    color: white;
-    font-weight: bold;
-}
-
-#pdf_btn {
-margin-left: 600px;
-    width: 150px;
-    height: 40px;
+#prevButton{
+    width: 80px;
+    height: 35px;
+    margin-top: -35px;
+    float: right;
     background-color: red;
     color: white;
     font-weight: bold;
+}
+#mail_btn {
+    width: 150px;
+    height: 35px;
+    margin-top: -35px;
+    background-color: green;
+    color: white;
+    font-weight: bold;
+    margin-left: 500px;
+}
+
+#pdf_btn {
+    width: 150px;
+    height: 35px;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    float: left;
 }
 
         #popupMessage{
@@ -116,6 +122,12 @@ margin-left: 600px;
     padding: 10px;
     z-index: 1000;
 }
+
+.container-1{
+    height: 35px;
+    background-color: blue;
+}
+
     </style>
 </head>
 <body>
@@ -124,14 +136,32 @@ margin-left: 600px;
     
 
     <div class="container">
-        <div>
-            <button id="prevButton" class="no-pdf">BACK</button>
-        <h1 id="heading">X-bar Control Chart</h1>
-    </div>
-       
-    <!-- Add this in your consolidateSrNo.html -->
-    <div id="popupMessage" class="no-pdf">
-    </div>
+        <div class="container-1">
+            <div id="heading">X BAR</div>
+            <form id="exportForm" method="post" action="{% url 'xBar' %}" style="margin-top:-25px ;">
+                {% csrf_token %}
+                <div class="button-container">
+                    <!-- Send Mail Button (Left Side) -->
+                    <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
+                    
+                    <!-- Email Selection Dropdown -->
+                    <label for="email" class="no-pdf"></label>
+                    <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 35px; ">
+                        <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
+                        <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
+                    </select>
+                
+                    <!-- PDF Conversion Button (Right Side) -->
+                    <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
+                </div>
+                
+            </form>
+            <div><button id="prevButton" class="no-pdf" >BACK</button></div>  
+        </div>
+
+     <!-- Add this in your consolidateSrNo.html -->
+<div id="popupMessage" class="no-pdf"></div>
+
 
     <script>
     // Get the success message from the context if it exists
@@ -220,26 +250,6 @@ margin-left: 600px;
             </div>
         {% endif %}
 
-        <div class="dropdown-content" id="dropdownContent">
-            <form id="exportForm" method="post" action="{% url 'xBar' %}">
-                {% csrf_token %}
-                <div class="button-container">
-                    <!-- Send Mail Button (Left Side) -->
-                    <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
-                    
-                    <!-- Email Selection Dropdown -->
-                    <label for="email" class="no-pdf"></label>
-                    <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 40px;">
-                        <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
-                        <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
-                    </select>
-                
-                    <!-- PDF Conversion Button (Right Side) -->
-                    <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
-                </div>
-                                
-            </form>
-        </div>
     </div>
     <script>
         document.getElementById('prevButton').addEventListener('click', function() {

@@ -1,100 +1,147 @@
-import os
-import sys
+import asyncio
+import serial
+import json
 import threading
-import time
-import requests
-from django.core.management import execute_from_command_line
-from PyQt5 import QtWidgets, QtCore, QtWebEngineWidgets
+import re
+from asgiref.sync import async_to_sync
+from channels.generic.websocket import AsyncWebsocketConsumer
 
-# Global event to signal server to stop
-stop_event = threading.Event()
+class SerialConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.group_name = 'serial_group'
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        self.ser = None
+        self.serial_thread = None
+        self.card = None
 
-class WebWindow(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
-        self.init_ui()
+    async def disconnect(self, close_code):
+        if self.ser and self.ser.is_open:
+            self.ser.close()
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    def init_ui(self):
-        self.setWindowTitle("Django Project Output")
-        
-        # Get the system screen size
-        screen = QtWidgets.QApplication.primaryScreen()
-        screen_size = screen.size()
-
-        # Set window size to match screen size
-        self.setGeometry(0, 0, screen_size.width(), screen_size.height())
-
-        # Create a QWebEngineView widget to display the web page
-        self.browser = QtWebEngineWidgets.QWebEngineView(self)
-        self.browser.setGeometry(0, 0, screen_size.width(), screen_size.height())
-
-        # Load the Django server URL
-        self.browser.load(QtCore.QUrl("http://127.0.0.1:8000/"))
-
-    def closeEvent(self, event):
-        # Signal the server to stop and close the window
-        stop_event.set()
-        event.accept()
-
-def start_web_window():
-    app = QtWidgets.QApplication(sys.argv)
-    window = WebWindow()
-    window.show()
-    sys.exit(app.exec_())
-
-def migrate_database():
-    # Set the Django settings module environment variable
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project_me.settings")
-    
-    # Run makemigrations
-    sys.argv = ["manage.py", "makemigrations"]
-    execute_from_command_line(sys.argv)
-    
-    # Run migrate
-    sys.argv = ["manage.py", "migrate"]
-    execute_from_command_line(sys.argv)
-
-def start_django_server():
-
-    # First, perform migrations
-    migrate_database()
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project_me.settings")
-    sys.argv = ["manage.py", "runserver", "--noreload"]
-    while not stop_event.is_set():
+    async def receive(self, text_data):
         try:
-            execute_from_command_line(sys.argv)
-        except SystemExit:
-            # Handle SystemExit if Django server exits (e.g., when stop_event is set)
-            break
+            data = json.loads(text_data)
+            if data.get('command') in ['start_serial', 'start_communication']:
+                await self.start_serial_communication(data)
+        except json.JSONDecodeError:
+            await self.send_error("Invalid JSON format")
 
-def wait_for_server():
-    url = "http://127.0.0.1:8000/"
-    timeout = 30  # Timeout in seconds
-    start_time = time.time()
+    async def start_serial_communication(self, data):
+        self.card = data.get("card")
+        com_port = data.get('com_port')
+        baud_rate = data.get('baud_rate')
+        parity = data.get('parity')
+        stopbit = data.get('stopbit')
+        databit = data.get('databit')
 
-    while True:
+        success, error_msg = self.configure_serial_port(
+            com_port, baud_rate, parity, stopbit, databit
+        )
+        
+        if success:
+            try:
+                command_message = "MMMMMMMMMM"
+                self.ser.write(command_message.encode('ASCII'))
+                self.serial_thread = threading.Thread(target=self.serial_read_thread)
+                self.serial_thread.daemon = True
+                self.serial_thread.start()
+            except Exception as e:
+                await self.send_error(f"Initialization error: {str(e)}")
+        else:
+            await self.send_error(error_msg, com_port)
+
+    def configure_serial_port(self, com_port, baud_rate, parity, stopbits, bytesize):
         try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                print("Django server is running.")
-                break
-        except requests.ConnectionError:
-            pass
+            if not all([com_port, baud_rate, parity, stopbits, bytesize]):
+                return False, "Missing parameters"
+
+            self.ser = serial.Serial(
+                port=com_port,
+                baudrate=int(baud_rate),
+                bytesize=int(bytesize),
+                timeout=None,
+                stopbits=float(stopbits),
+                parity=parity[0].upper()
+            )
+            return True, None
+        except (ValueError, serial.SerialException) as e:
+            return False, str(e)
+        except Exception as e:
+            return False, f"Unexpected error: {str(e)}"
+
+    def serial_read_thread(self):
+        accumulated_data = ""
+        try:
+            while True:
+                if self.ser and self.ser.is_open and self.ser.in_waiting > 0:
+                    received_data = self.ser.read(self.ser.in_waiting).decode('ASCII')
+                    accumulated_data += received_data
+
+                    if '\r' in accumulated_data:
+                        messages = accumulated_data.split('\r')
+                        for message in messages:
+                            message = message.strip()
+                            if message:
+                                self.process_message(message)
+                        accumulated_data = ""
+        except Exception as e:
+            error_msg = f"Read error: {str(e)}"
+            async_to_sync(self.channel_layer.group_send)(
+                self.group_name,
+                {'type': 'serial.message', 'error': error_msg}
+            )
+        finally:
+            if self.ser and self.ser.is_open:
+                self.ser.close()
+
+    def process_message(self, message):
+        com_port = self.ser.port
+        if self.card in ["LVDT_4CH", "PIEZO_4CH"]:
+            if not self.validate_message(message):
+                error_msg = f"Invalid data for {self.card}: {message}"
+                async_to_sync(self.channel_layer.group_send)(
+                    self.group_name,
+                    {'type': 'serial.message', 'error': error_msg}
+                )
+                return
+
+        async_to_sync(self.channel_layer.group_send)(
+            self.group_name,
+            {
+                'type': 'serial.message',
+                'message': message,
+                'com_port': com_port,
+                'length': len(message)
+            }
+        )
+
+    def validate_message(self, message):
+        pattern = r'^[A-D][+-]\d+$'  # Simplified pattern for 4 channels
+        parts = re.findall(r'[A-D][+-]\d+', message)
+        return len(parts) == 4 and all(re.match(pattern, part) for part in parts)
+
+    async def send_error(self, error_msg, com_port=None):
+        payload = {'error': error_msg}
+        if com_port:
+            payload['com_port'] = com_port
+        await self.channel_layer.group_send(
+            self.group_name,
+            {'type': 'serial.message', **payload}
+        )
+
+    async def serial_message(self, event):
+        payload = {}
+        if 'error' in event:
+            payload['error'] = event['error']
+            if 'com_port' in event:
+                payload['com_port'] = event['com_port']
+        elif 'message' in event:
+            payload.update({
+                'message': event['message'],
+                'com_port': event.get('com_port', 'N/A'),
+                'length': event.get('length', 0)
+            })
         
-        if time.time() - start_time > timeout:
-            print("Timeout waiting for Django server.")
-            break
-        
-        time.sleep(1)
-
-if __name__ == "__main__":
-    # Start the Django server in a separate thread
-    django_thread = threading.Thread(target=start_django_server)
-    django_thread.daemon = True
-    django_thread.start()
-
-    # Wait for the Django server to start
-    wait_for_server()
-
-    # Start the PyQt5 window after the server starts
-    start_web_window()
+        await self.send(text_data=json.dumps(payload))

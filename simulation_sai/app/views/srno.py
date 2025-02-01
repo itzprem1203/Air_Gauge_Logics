@@ -107,20 +107,18 @@ def srno(request):
             'Operator': [],
         }
 
-        parameter_data = parameter_settings.objects.filter(model_id=part_model).values('parameter_name', 'usl', 'lsl').order_by('id')
+        parameter_data = parameter_settings.objects.filter(model_id=part_model).values('parameter_name', 'utl', 'ltl').order_by('id')
 
         for param in parameter_data:
             param_name = param['parameter_name']
-            usl = param['usl']
-            lsl = param['lsl']
-            key = f"{param_name} <br>{usl} <br>{lsl}"
+            utl = param['utl']
+            ltl = param['ltl']
+            key = f"{param_name} <br>{utl} <br>{ltl}"
             data_dict[key] = []
 
         data_dict['Status'] = []
         
-        for i in range(1, 21):
-            data_dict[(i)] = []
-
+       
     
 
         status_counts = {'ACCEPT': 0, 'REJECT': 0, 'REWORK': 0}
@@ -150,16 +148,29 @@ def srno(request):
             readings_html = ''
             for data in comp_sr_no_data:
                 parameter_name = data['parameter_name']
-                usl = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model).usl
-                lsl = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model).lsl
-                key = f"{parameter_name} <br>{usl} <br>{lsl}"
+                utl = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model).utl
+                ltl = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model).ltl
+                key = f"{parameter_name} <br>{utl} <br>{ltl}"
                 formatted_date = data['date'].strftime('%d-%m-%Y %I:%M:%S %p')
-                if data['status_cell'] == 'ACCEPT':
-                    readings_html = f'<span style="background-color: #00ff00; padding: 2px;">{data["readings"]}</span>'
-                elif data['status_cell'] == 'REWORK':
-                    readings_html = f'<span style="background-color: yellow; padding: 2px;">{data["readings"]}</span>'
-                elif data['status_cell'] == 'REJECT':
-                    readings_html = f'<span style="background-color: red; padding: 2px;">{data["readings"]}</span>'
+                 # Check the status and set the value accordingly
+                if data['readings'] is None or data['readings'] == '':
+                    if data['status_cell'] == 'ACCEPT':
+                        readings_html = f'<span style="background-color: #00ff00; padding: 2px;">ACCEPT</span>'
+                    elif data['status_cell'] == 'REWORK':
+                        readings_html = f'<span style="background-color: yellow; padding: 2px;">REWORK</span>'
+                    elif data['status_cell'] == 'REJECT':
+                        readings_html = f'<span style="background-color: red; padding: 2px;">REJECT</span>'
+                    else:
+                        readings_html = '<span style="padding: 2px;">N/A</span>'
+                else:
+                    # If readings exist, use the actual readings
+                    if data['status_cell'] == 'ACCEPT':
+                        readings_html = f'<span style="background-color: #00ff00; padding: 2px;">{data["readings"]}</span>'
+                    elif data['status_cell'] == 'REWORK':
+                        readings_html = f'<span style="background-color: yellow; padding: 2px;">{data["readings"]}</span>'
+                    elif data['status_cell'] == 'REJECT':
+                        readings_html = f'<span style="background-color: red; padding: 2px;">{data["readings"]}</span>'
+
                 combined_row[key] = readings_html
                 combined_row['Date'] = formatted_date
                 combined_row['Operator'] = data['operator']
@@ -260,9 +271,13 @@ def srno(request):
             pdf = HTML(string=html_string).write_pdf(stylesheets=[css])
 
             # Get the Downloads folder path
-            downloads_folder = os.path.join(os.path.expanduser('~'), 'Downloads')
+            # Get the Downloads folder path
+            target_folder = r"C:\Program Files\Gauge_Logic\pdf_files"
+
+            # Ensure the target folder exists
+            os.makedirs(target_folder, exist_ok=True)
             pdf_filename = f"consolidateSrNo_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
-            pdf_file_path = os.path.join(downloads_folder, pdf_filename)
+            pdf_file_path = os.path.join(target_folder, pdf_filename)
 
             # Save the PDF file in the Downloads folder
             with open(pdf_file_path, 'wb') as pdf_file:
@@ -278,8 +293,9 @@ def srno(request):
                 return render(request, 'app/reports/consolidateSrNo.html', context)
 
             elif export_type == 'send_mail':
+                pdf_filename = f"consolidateSrNo_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
                 # Send the PDF as an email attachment
-                send_mail_with_pdf(pdf, recipient_email)
+                send_mail_with_pdf(pdf, recipient_email, pdf_filename)
                 success_message = "PDF generated and email sent successfully!"
                 return render(request, 'app/reports/consolidateSrNo.html', {'success_message': success_message, **context})
         elif request.method == 'POST' and export_type == 'excel':
@@ -353,9 +369,13 @@ def srno(request):
                     worksheet.write(len(consolidateSrNowise_df) + 2, col_num + 1, value, header_format)
 
             # Get the Downloads folder path
-            downloads_folder = os.path.join(os.path.expanduser('~'), 'Downloads')
+            target_folder = r"C:\Program Files\Gauge_Logic\xlsx_files"
+
+            # Ensure the target folder exists
+            os.makedirs(target_folder, exist_ok=True)
+
             excel_filename = f"consolidateSrNo_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
-            excel_file_path = os.path.join(downloads_folder, excel_filename)
+            excel_file_path = os.path.join(target_folder, excel_filename)
 
             # Save the Excel file in the Downloads folder
             with open(excel_file_path, 'wb') as excel_file:
@@ -373,10 +393,10 @@ def srno(request):
         return HttpResponse("Unsupported request method", status=405)
 
 
-def send_mail_with_pdf(pdf_content, recipient_email):
-    sender_email = "itzprem1203@gmail.com"
-    sender_password = "dxnb lcho buxy yang"
-    subject = "Consolidate Report PDF"
+def send_mail_with_pdf(pdf_content, recipient_email, pdf_filename):
+    sender_email = "gaugelogic.report@gmail.com"
+    sender_password = "tdkd cfkj ahsa qril"
+    subject = "ConsolidateSrNo Report PDF"
     body = "Please find the attached PDF report."
 
     # Setup email parameters
@@ -392,7 +412,7 @@ def send_mail_with_pdf(pdf_content, recipient_email):
     attachment = MIMEBase('application', 'octet-stream')
     attachment.set_payload(pdf_content)
     encoders.encode_base64(attachment)
-    attachment.add_header('Content-Disposition', f'attachment; filename="consolidate_report.pdf"')
+    attachment.add_header('Content-Disposition', f'attachment; filename="{pdf_filename}"')
     msg.attach(attachment)
 
     # Send the email using SMTP

@@ -4,9 +4,10 @@ import uuid
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from app.models import CustomerDetails, MasterIntervalSettings, ShiftSettings, BackupSettings
+from app.models import CustomerDetails, MasterIntervalSettings,ParameterFactor, ShiftSettings, BackupSettings, TableOneData, parameter_settings
 from datetime import datetime
 from dateutil.relativedelta import relativedelta  # To handle month addition smoothly
+from django.db.models import Q
 
 
 def get_ip_address():
@@ -38,6 +39,8 @@ def utility(request):
         if request.method == 'POST':
             data = json.loads(request.body)
             form_id = data.get('id')
+            part_model = data.get('part_model')
+            print("this is the part model for you",part_model)
 
             if form_id == 'backup_date':
                 # Get the backup date from the request data
@@ -141,7 +144,38 @@ def utility(request):
                 customer_details.address = address
                 customer_details.save()
 
-            return JsonResponse({'status': 'success'})
+            elif form_id == 'parameter_factor':
+                part_model = data.get('part_model')
+                parameter_name = data.get('parameter_name')
+                method = data.get('method')
+                value = data.get('value')
+
+                 # Check if a ParameterFactor record already exists with the same part_model and parameter_name
+                probe_factor, created = ParameterFactor.objects.update_or_create(
+                    part_model=part_model,
+                    parameter_name=parameter_name,
+                    defaults={'method': method, 'value': value}  # Update method and value if exists
+                )
+
+
+               
+       
+             # Fetch parameter data and exclude specific conditions
+            parameter_names = parameter_settings.objects.filter(
+                model_id=part_model
+            ).exclude( Q(attribute=True)
+            ).values_list('parameter_name', flat=True).order_by('id')
+            print("parameter_data",parameter_names)
+
+
+
+            response_data = {
+                'status': 'success',
+                'parameter_names': list(parameter_names)
+                
+            }
+
+            return JsonResponse(response_data)
 
         elif request.method == 'GET':
             try:
@@ -150,6 +184,9 @@ def utility(request):
                 customer_details = CustomerDetails.objects.all()
                 backup_date = BackupSettings.objects.order_by('-id').first()
                 print('your values are:',backup_date)
+                part_model_values = TableOneData.objects.order_by('id').values_list('part_model', flat=True).distinct()
+                print('your data is this part_model_values:',part_model_values)
+
 
                 context = {
                     'master_interval_settings': master_interval_settings,
@@ -157,7 +194,8 @@ def utility(request):
                     'shift_settings': shift_settings,
                     'customer_details': customer_details,
                     'ip_address': ip_address,  # Pass IP address to context
-                    'mac_address': mac_address  # Pass MAC address to contex
+                    'mac_address': mac_address,  # Pass MAC address to contex
+                    'part_model_values': part_model_values
                 }
 
                 return render(request, 'app/utility.html', context)

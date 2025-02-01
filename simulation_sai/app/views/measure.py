@@ -10,7 +10,7 @@ from app.models import measure_data, parameter_settings,Master_settings
 
 
 
-def master(request):
+def measure(request):
     if request.method == 'POST':
         try:
             # Retrieve the data from the request body
@@ -115,10 +115,8 @@ def master(request):
                 'message': 'Successfully received the selected values.',
                 'selectedValue': selected_value,
                 'parameter_names': [item['parameter_name'] for item in filtered_data],
-                'analog_zero': [item['analog_zero'] for item in filtered_data],
-                'reference_value': [item['reference_value'] for item in filtered_data],
-                'low_mv': [],
-                'high_mv': [],
+                'low_mv': [item['low_mv'] for item in filtered_data],
+                'high_mv': [item['high_mv'] for item in filtered_data],
                 'probe_no': [item['probe_no'] for item in filtered_data],
                 'mastering': [item['mastering'] for item in filtered_data],
                 'nominal': [item['nominal'] for item in filtered_data],
@@ -126,23 +124,14 @@ def master(request):
                 'usl': [item['usl'] for item in filtered_data],
                 'utl': [item['utl'] for item in filtered_data],
                 'ltl': [item['ltl'] for item in filtered_data],
-                'job_dia': [item['job_dia'] for item in filtered_data],
+                'job_dia':[item['job_dia'] for item in filtered_data],
                 'digits': [item['digits'] for item in filtered_data],
                 'e_values': [values.get('e') for values in last_stored_parameter.values()],
                 'd_values': [values.get('d') for values in last_stored_parameter.values()],
                 'o1_values': [values.get('o1') for values in last_stored_parameter.values()],
                 'id': [values.get('id') for values in last_stored_parameter.values()]
+            
             }
-
-            # Add custom logic to handle low_mv and high_mv fallback
-            for item in filtered_data:
-                if item.get('low_mv') is not None and item.get('high_mv') is not None:
-                    response_data['low_mv'].append(item['low_mv'])
-                    response_data['high_mv'].append(item['high_mv'])
-                else:
-                    # Fallback to analog_zero and reference_value
-                    response_data['low_mv'].append(item['analog_zero'])
-                    response_data['high_mv'].append(item['reference_value'])
 
             return JsonResponse(response_data)
         
@@ -182,4 +171,4 @@ def master(request):
         
     
    
-    return render(request, 'app/master.html', context)
+    return render(request, 'app/measure.html', context)

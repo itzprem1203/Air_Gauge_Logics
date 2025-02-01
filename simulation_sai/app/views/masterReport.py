@@ -1,9 +1,12 @@
-from datetime import datetime
-import re
-import pandas as pd
 from django.shortcuts import render
-from django.utils import timezone  # Import Django's timezone utility
-from app.models import MeasurementData,CustomerDetails, parameter_settings, parameterwise_report  # Adjust import based on your project structure
+
+from app.models import CustomerDetails, Master_settings, master_report, parameter_settings
+from django.utils import timezone  
+from datetime import datetime
+from django.db.models import Q
+import pandas as pd
+from django.db.models import Q
+
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -19,8 +22,7 @@ from django.conf import settings
 from weasyprint import HTML,CSS
 import pandas as pd
 from io import BytesIO
-
-
+import re
 
 # Function to remove HTML tags
 def strip_html_tags(text):
@@ -35,10 +37,10 @@ def replace_br_with_newline(text):
         return text.replace('<br>', '\n')
     return text
 
-def paraReport(request):
+def masterReport(request):
     if request.method == 'GET':
-        parameterwise_values = parameterwise_report.objects.all()
-        part_model = parameterwise_report.objects.values_list('part_model', flat=True).distinct().get()
+        master_date_values = master_report.objects.all()
+        part_model = master_report.objects.values_list('part_model', flat=True).distinct().get()
         print("part_model:", part_model)
 
         email_1 = CustomerDetails.objects.values_list('primary_email',flat=True).get()
@@ -47,19 +49,19 @@ def paraReport(request):
         email_2 = CustomerDetails.objects.values_list('secondary_email',flat=True).get()
         print('your primary mail id from server to front end now :',email_2)
 
-        fromDateStr = parameterwise_report.objects.values_list('formatted_from_date', flat=True).get()
-        toDateStr = parameterwise_report.objects.values_list('formatted_to_date', flat=True).get()
+        fromDateStr = master_report.objects.values_list('formatted_from_date', flat=True).get()
+        toDateStr = master_report.objects.values_list('formatted_to_date', flat=True).get()
         print("fromDate:", fromDateStr, "toDate:", toDateStr)
 
-        parameter_name = parameterwise_report.objects.values_list('parameter_name', flat=True).get()
+        parameter_name = master_report.objects.values_list('parameter_name', flat=True).get()
         print("parameter_name:", parameter_name)
-        operator = parameterwise_report.objects.values_list('operator', flat=True).get()
+        operator = master_report.objects.values_list('operator', flat=True).get()
         print("operator:", operator)
-        machine = parameterwise_report.objects.values_list('machine', flat=True).get()
+        machine = master_report.objects.values_list('machine', flat=True).get()
         print("machine:", machine)
-        shift = parameterwise_report.objects.values_list('shift', flat=True).get()
+        shift = master_report.objects.values_list('shift', flat=True).get()
         print("shift:", shift)
-        job_no = parameterwise_report.objects.values_list('job_no', flat=True).get()
+        job_no = master_report.objects.values_list('job_no', flat=True).get()
         print("job_no:", job_no)
 
         # Convert the string representations to naive datetime objects with the correct format
@@ -74,10 +76,10 @@ def paraReport(request):
         # Print the datetime objects to verify correct conversion
         print("from_datetime:", from_datetime, "to_datetime:", to_datetime)
 
-        # Prepare the filter based on parameters
+       # Prepare the filter based on parameters
         filter_kwargs = {
-            'date__range': (from_datetime, to_datetime),
-            'part_model': part_model,
+            'date_time__range': (from_datetime, to_datetime), 
+            'selected_value': part_model,
         }
 
         # Conditionally add filters based on values being "ALL"
@@ -93,141 +95,108 @@ def paraReport(request):
         if shift != "ALL":
             filter_kwargs['shift'] = shift
 
-        if job_no != "ALL":
-            filter_kwargs['comp_sr_no'] = job_no
-
-        # Filter the MeasurementData records based on the constructed filter
-        filtered_data = MeasurementData.objects.filter(**filter_kwargs).order_by('date')
-
        
+
+        # Filtered data based on the required filters
+        filtered_data = Master_settings.objects.filter(**filter_kwargs).order_by('date_time')
+        if not filtered_data:
+            context = {
+                'no_results': True
+            }
+            return render(request, 'app/reports/masterReport.html', context)
+
 
         # Initialize the data_dict with required headers
         data_dict = {
             'Date': [],
-            'Job Numbers': [],
+            'Compono': [],
             'Shift': [],
             'Operator': [],
+            'Machine': [],
         }
 
-        # Filter for the specific parameter if parameter_name is provided and not "ALL"
-        if parameter_name != "ALL":
-            parameter_data = parameter_settings.objects.filter(
-                model_id=part_model,
-                parameter_name=parameter_name
-            ).values('parameter_name', 'utl', 'ltl').order_by('id')
-        else:
-            parameter_data = parameter_settings.objects.filter(
-                model_id=part_model
-            ).values('parameter_name', 'utl', 'ltl').order_by('id')
+        # Fetch parameter data and exclude specific conditions
+        parameter_data = parameter_settings.objects.filter(
+            model_id=part_model
+        ).exclude(
+            Q(measurement_mode='TIR') | Q(attribute=True)
+        ).values('parameter_name').order_by('id')
 
-        # Loop through each parameter_name in the filtered data and add to the dictionary
+        # Create a list to hold the column headers
+        column_headers = []
+
+        # Generate column headers for LOW and HIGH values dynamically
         for param in parameter_data:
-            param_name = param['parameter_name']
-            utl = param['utl']
-            ltl = param['ltl']
-            
-            # Combine parameter_name, utl, ltl as the key
-            key = f"{param_name} <br>{utl} <br>{ltl}"
-            # Initialize an empty list for the key
-            data_dict[key] = []
+            column_headers.append(param['parameter_name'] + " LOW")
+            column_headers.append(param['parameter_name'] + " HIGH")
 
+        # Update the data_dict with the new column headers and empty lists
+        data_dict.update({header: [] for header in column_headers})
+
+        # Group data by common fields (date, operator, compono, shift, machine)
         grouped_data = {}
 
-        # Process filtered data
         for record in filtered_data:
-            date = record.date.strftime('%d-%m-%Y %I:%M:%S %p')
-            
-            if date not in grouped_data:
-                grouped_data[date] = {
-                    'Job Numbers': set(),
-                    'Shift': record.shift,
-                    'Operator': record.operator,
-                    'Parameters': {key: set() for key in data_dict if key not in ['Date', 'Shift', 'Operator', 'Status', 'Job Numbers']}
-                }
+            # Grouping key based on common fields
+            group_key = (
+                record.date_time.strftime('%d-%m-%Y %I:%M:%S %p'),
+                record.probe_no,
+                record.shift,
+                record.operator,
+                record.machine,
+            )
 
-            # Collect unique job numbers
-            if record.comp_sr_no:
-                grouped_data[date]['Job Numbers'].add(record.comp_sr_no)
+            # Initialize the group if not already present
+            if group_key not in grouped_data:
+                grouped_data[group_key] = {header: "" for header in column_headers}
 
-            # Add parameter data only for the required parameter
-            for param in parameter_data:
-                param_name = param['parameter_name']
-                utl = param['utl']
-                ltl = param['ltl']
-                key = f"{param_name} <br>{utl} <br>{ltl}"
+            # Update the corresponding LOW and HIGH values for the parameter_name
+            if record.parameter_name in [param['parameter_name'] for param in parameter_data]:
+                grouped_data[group_key][record.parameter_name + " LOW"] = record.a if record.a is not None else ""
+                grouped_data[group_key][record.parameter_name + " HIGH"] = record.b if record.b is not None else ""
 
-                parameter_values = MeasurementData.objects.filter(
-                    comp_sr_no=record.comp_sr_no,
-                    date=record.date,
-                    parameter_name=param_name
-                )
+        # Flatten the grouped data into rows for the DataFrame
+        for key, param_values in grouped_data.items():
+            date, compono, shift, operator, machine = key
 
-                for pv in parameter_values:
-                    # Handle cases where `readings` is None or empty
-                    if pv.readings is None or pv.readings == '':
-                        # Display the `status_cell` value instead
-                        if pv.status_cell == 'ACCEPT':
-                            value_to_display = f'<span style="background-color: #00ff00; padding: 2px;">ACCEPT</span>'
-                        elif pv.status_cell == 'REWORK':
-                            value_to_display = f'<span style="background-color: yellow; padding: 2px;">REWORK</span>'
-                        elif pv.status_cell == 'REJECT':
-                            value_to_display = f'<span style="background-color: red; padding: 2px;">REJECT</span>'
-                        else:
-                            value_to_display = '<span style="padding: 2px;">N/A</span>'
-                    else:
-                        # If `readings` is not None or empty, use its value
-                        if pv.status_cell == 'ACCEPT':
-                            value_to_display = f'<span style="background-color: #00ff00; padding: 2px;">{pv.readings}</span>'
-                        elif pv.status_cell == 'REWORK':
-                            value_to_display = f'<span style="background-color: yellow; padding: 2px;">{pv.readings}</span>'
-                        elif pv.status_cell == 'REJECT':
-                            value_to_display = f'<span style="background-color: red; padding: 2px;">{pv.readings}</span>'
-                        else:
-                            value_to_display = f'<span style="padding: 2px;">{pv.readings}</span>'
-
-                    grouped_data[date]['Parameters'][key].add(value_to_display)
-
-        # Convert grouped data into a single-row-per-date format
-        for date, group in grouped_data.items():
-            # Append the unique date to the Date column
+            # Append the grouped values to the data_dict
             data_dict['Date'].append(date)
+            data_dict['Compono'].append(compono)
+            data_dict['Shift'].append(shift)
+            data_dict['Operator'].append(operator)
+            data_dict['Machine'].append(machine)
 
-            # Combine all job numbers for the date into a single string and append
-            job_numbers_combined = "<br>".join(sorted(group['Job Numbers']))
-            data_dict['Job Numbers'].append(job_numbers_combined)
+            # Add parameter values to the corresponding headers
+            for header in column_headers:
+                data_dict[header].append(param_values.get(header, ""))
 
-            # Append other single-value fields directly
-            data_dict['Shift'].append(group['Shift'])
-            data_dict['Operator'].append(group['Operator'])
-            
-
-            # Combine parameter values for each parameter key into a single string
-            for key, values in group['Parameters'].items():
-                combined_values = "<br>".join(sorted(values))
-                data_dict[key].append(combined_values)
-
-        
-        
-        # Create a pandas DataFrame from the dictionary with specified column order
+        # Create a pandas DataFrame from the dictionary
         df = pd.DataFrame(data_dict)
 
-        # Assuming df is your pandas DataFrame
-        df.index = df.index + 1  # Shift index by 1 to start from 1
+        # Shift index by 1 to start from 1
+        df.index = df.index + 1
 
-        # Convert dataframe to HTML table with custom styling
-        table_html = df.to_html(index=True, escape=False, classes='table table-striped')
+        # Convert the DataFrame to an HTML table with custom styling
+        table_html = df.to_html(
+            index=True,
+            escape=False,
+            classes='table table-striped'
+        )
 
+        # Print or return the HTML table
+        print(table_html)
         context = {
             'table_html': table_html,
-            'parameterwise_values': parameterwise_values,
+            'master_report_values': master_date_values,
             'email_1': email_1,
             'email_2': email_2
         }
 
         request.session['data_dict'] = data_dict  # Save data_dict to the session for POST request
 
-        return render(request, 'app/reports/parameterReport.html', context)
-    
+        return render(request,"app/reports/masterReport.html",context)
+
+        
     elif request.method == 'POST':
         export_type = request.POST.get('export_type')
         recipient_email = request.POST.get('recipient_email')
@@ -240,10 +209,10 @@ def paraReport(request):
 
 
         if export_type == 'pdf' or export_type == 'send_mail':
-            template = get_template('app/reports/parameterReport.html')
+            template = get_template('app/reports/masterReport.html')
             context = {
                 'table_html': df.to_html(index=True, escape=False, classes='table table-striped table_data'),
-                'parameterwise_values': parameterwise_report.objects.all(),
+                'master_vallues': master_report.objects.all(),
             }
             html_string = template.render(context)
 
@@ -280,11 +249,12 @@ def paraReport(request):
 
             pdf = HTML(string=html_string).write_pdf(stylesheets=[css])
 
+            # Get the Downloads folder path
             target_folder = r"C:\Program Files\Gauge_Logic\pdf_files"
 
             # Ensure the target folder exists
             os.makedirs(target_folder, exist_ok=True)
-            pdf_filename = f"parameterReport_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+            pdf_filename = f"masterReport_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
             pdf_file_path = os.path.join(target_folder, pdf_filename)
 
             # Save the PDF file in the Downloads folder
@@ -298,20 +268,20 @@ def paraReport(request):
                   # Pass success message to the context to show on the front end
                 success_message = "PDF generated successfully!"
                 context['success_message'] = success_message
-                return render(request, 'app/reports/parameterReport.html', context)
+                return render(request, 'app/reports/masterReport.html', context)
 
             elif export_type == 'send_mail':
-                pdf_filename = f"parameterReport_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+                pdf_filename = f"masterReport_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
                 # Send the PDF as an email attachment
                 send_mail_with_pdf(pdf, recipient_email, pdf_filename)
                 success_message = "PDF generated and email sent successfully!"
-                return render(request, 'app/reports/parameterReport.html', {'success_message': success_message, **context})
+                return render(request, 'app/reports/masterReport.html', {'success_message': success_message, **context})
         
         elif request.method == 'POST' and export_type == 'excel':
-            template = get_template('app/reports/parameterReport.html')
+            template = get_template('app/reports/masterReport.html')
             context = {
                 'table_html': df.to_html(index=True, escape=False, classes='table table-striped table_data'),
-                'parameterwise_values': parameterwise_report.objects.all(),
+                'master_vallues': master_report.objects.all(),
             }
             # Remove HTML tags from the DataFrame before exporting
             df = df.applymap(strip_html_tags)
@@ -319,12 +289,12 @@ def paraReport(request):
             # Replace <br> with newline in column headers to make them multi-line in Excel
             df.columns = [replace_br_with_newline(col) for col in df.columns]
 
-            # Create a new DataFrame for parameterwise_values
-            parameterwise_values = parameterwise_report.objects.all()
-            parameterwise_data = []
+            # Create a new DataFrame for master_vallues
+            master_vallues = master_report.objects.all()
+            master_data_values = []
 
-            for data in parameterwise_values:
-                parameterwise_data.append({
+            for data in master_vallues:
+                master_data_values.append({
                     'PARTMODEL': data.part_model,
                     'PARAMETER NAME': data.parameter_name,
                     'OPERATOR': data.operator,
@@ -337,20 +307,20 @@ def paraReport(request):
                     'CURRENT DATE': data.current_date_time,
                 })
 
-            parameterwise_df = pd.DataFrame(parameterwise_data)
+            parameterwise_df = pd.DataFrame(master_data_values)
 
             # Create an Excel writer object using BytesIO as a file-like object
             excel_buffer = BytesIO()
             with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
                 # Write parameterwise_df to the Excel sheet first
-                parameterwise_df.to_excel(writer, sheet_name='ParameterReport', index=False, startrow=0)
+                parameterwise_df.to_excel(writer, sheet_name='masterReport', index=False, startrow=0)
 
                 # Write the original DataFrame to the same sheet below the parameterwise data
-                df.to_excel(writer, sheet_name='ParameterReport', index=True, startrow=len(parameterwise_df) + 2)
+                df.to_excel(writer, sheet_name='masterReport', index=True, startrow=len(parameterwise_df) + 2)
 
                 # Get access to the workbook and worksheet objects
                 workbook = writer.book
-                worksheet = writer.sheets['ParameterReport']
+                worksheet = writer.sheets['masterReport']
 
                 # Format for multi-line header
                 header_format = workbook.add_format({
@@ -373,7 +343,7 @@ def paraReport(request):
 
             # Ensure the target folder exists
             os.makedirs(target_folder, exist_ok=True)
-            excel_filename = f"parameterReport_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
+            excel_filename = f"masterReport_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
             excel_file_path = os.path.join(target_folder, excel_filename)
 
             # Save the Excel file in the Downloads folder
@@ -387,7 +357,7 @@ def paraReport(request):
             success_message = "Excel file generated successfully!"
             
             # Render success message in the frontend
-            return render(request, 'app/reports/parameterReport.html', {'success_message': success_message ,**context})
+            return render(request, 'app/reports/masterReport.html', {'success_message': success_message ,**context})
 
         return HttpResponse("Unsupported request method", status=405)
 
@@ -396,7 +366,7 @@ def paraReport(request):
 def send_mail_with_pdf(pdf_content, recipient_email, pdf_filename):
     sender_email = "gaugelogic.report@gmail.com"
     sender_password = "tdkd cfkj ahsa qril"
-    subject = "ParameterReport PDF"
+    subject = "masterReport PDF"
     body = "Please find the attached PDF report."
 
     # Setup email parameters
@@ -426,5 +396,5 @@ def send_mail_with_pdf(pdf_content, recipient_email, pdf_filename):
 
 
 
-
-
+       
+    

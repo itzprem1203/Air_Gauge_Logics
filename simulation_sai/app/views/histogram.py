@@ -50,9 +50,13 @@ def histogram(request):
 
         if export_type == 'pdf':
             # Define the path to save the PDF
-            downloads_folder = os.path.join(os.path.expanduser('~'), 'Downloads')
+            target_folder = r"C:\Program Files\Gauge_Logic\pdf_files"
+
+            # Ensure the target folder exists
+            os.makedirs(target_folder, exist_ok=True)
+
             pdf_filename = f"Histogram_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
-            pdf_path = os.path.join(downloads_folder, pdf_filename)
+            pdf_path = os.path.join(target_folder, pdf_filename)
 
             # Save the PDF to the filesystem
             with open(pdf_path, 'wb') as pdf_output:
@@ -196,8 +200,8 @@ def generate_histogram_context(request):
 
 
 def send_mail_with_pdf(pdf_content, recipient_email, pdf_filename):
-    sender_email = "itzprem1203@gmail.com"
-    sender_password = "dxnb lcho buxy yang"
+    sender_email = "gaugelogic.report@gmail.com"
+    sender_password = "tdkd cfkj ahsa qril"
     subject = "Histogram Report PDF"
     body = "Please find the attached PDF report."
 

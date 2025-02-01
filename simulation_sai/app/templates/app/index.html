@@ -86,9 +86,26 @@
         .image-7 { transform: rotate(270deg) translate(210px) rotate(-270deg); }
         .image-8 { transform: rotate(315deg) translate(210px) rotate(-315deg); }
 
+        .notify{
+            margin-top: -500px;
+            margin-left: -200px;
+        }
+
+        #notification{
+            height: 50px;
+            width: 280px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            border: 2px solid black;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
        
         #logout-btn {
-             height: 50px;
+            height: 50px;
             width: 150px;
             margin-top: -500px;
             display: flex;
@@ -111,7 +128,10 @@
     </style>
 </head>
 <body>
-    
+    <div class="notify">
+        <input type="text" id="notification1" readonly><br>
+        <input type="text" id="notification2" readonly>
+    </div>
     <div class="gallery">
         <div class="center-image">
             <img src="{% static 'images/Gauge.jpg' %}">
@@ -167,8 +187,140 @@
             <p>Comport Settings</p>
         </div>
     </div>
+
+
+    <input type="text" id="db_port" value="{{ comport_com_port }}" hidden>
+    <input type="text" id="com_ports" value="{{ ports_string }}" hidden>
+    <input type="text" id="baud_rate" value="{{ comport_baud_rate }}" hidden>
+    <input type="text" id="parity" value="{{ comport_parity }}" hidden>
+    <input type="text" id="stopbit" value="{{ comport_stopbit }}" hidden>
+    <input type="text" id="databit" value="{{ comport_databit }}" hidden>
+    <textarea id="serial-data-display" cols="50" rows="10" readonly hidden></textarea>
+
     <button id="logout-btn">LOGOUT</button>
     <script>
+
+
+
+
+
+// Initialize WebSocket connection
+const socket = new WebSocket('ws://localhost:8000/ws/index/');
+
+// Object to track received data status for each COM port
+let comPortStatus = {};
+let comPortOrder = []; // Track the order of received COM ports
+
+// Function to display notifications
+function displayNotification(elementId, message, isSuccess) {
+    const notificationBox = document.getElementById(elementId);
+    notificationBox.value = message;
+    notificationBox.style.backgroundColor = isSuccess ? "green" : "red";
+}
+
+// Function to start serial communication
+function startSerialCommunication() {
+    if (socket.readyState === WebSocket.OPEN) {
+        const dbPorts = document.getElementById("db_port").value.split(" ");
+        const comPorts = document.getElementById("com_ports").value.split(" ");
+        const baudRates = document.getElementById("baud_rate").value.split(" ");
+        const parities = document.getElementById("parity").value.split(" ");
+        const stopbits = document.getElementById("stopbit").value.split(" ");
+        const databits = document.getElementById("databit").value.split(" ");
+
+        let foundMatch = false;
+
+        dbPorts.forEach((dbPort, index) => {
+            if (comPorts.includes(dbPort)) {
+                foundMatch = true;
+                if (!comPortStatus[dbPort]) {
+                    comPortStatus[dbPort] = false; // Initially mark as no data received
+                    comPortOrder.push(dbPort); // Track order of first two COMs
+                }
+
+                socket.send(JSON.stringify({
+                    command: 'start_communication',
+                    com_port: dbPort,
+                    baud_rate: baudRates[index] || baudRates[0],
+                    parity: parities[index] || parities[0],
+                    stopbit: stopbits[index] || stopbits[0],
+                    databit: databits[index] || databits[0]
+                }));
+            }
+        });
+
+        if (!foundMatch) {
+            displayNotification("notification1", `No matching COM port found`, false);
+            displayNotification("notification2", `No matching COM port found`, false);
+        }
+    } else {
+        setTimeout(startSerialCommunication, 3000);
+    }
+}
+
+// WebSocket event listeners
+socket.onopen = function() {
+    console.log("WebSocket connection established.");
+    startSerialCommunication();
+};
+
+socket.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    const message = data.message;
+    const comPort = data.com_port;
+
+    console.log("Received from COM:", comPort, "Message:", message);
+
+    if (comPort) {
+        comPortStatus[comPort] = true; // Mark that data has been received
+
+        if (!comPortOrder.includes(comPort)) {
+            comPortOrder.push(comPort);
+        }
+    }
+
+    const serialDataDisplay = document.getElementById("serial-data-display");
+    serialDataDisplay.value += message + '\n';
+    serialDataDisplay.scrollTop = serialDataDisplay.scrollHeight;
+
+    // Assign first and second COM ports based on order
+    const firstCOM = comPortOrder[0] || null;
+    const secondCOM = comPortOrder[1] || null;
+
+    if (comPort === firstCOM) {
+        displayNotification("notification1", `Connected: ${firstCOM} `, true);
+    }
+    if (comPort === secondCOM) {
+        displayNotification("notification2", `Connected: ${secondCOM} `, true);
+    }
+};
+
+// Function to check for disconnected COM ports every **1 second**
+setInterval(() => {
+    Object.keys(comPortStatus).forEach((comPort) => {
+        if (!comPortStatus[comPort]) {
+            // Handle disconnected COM ports separately
+            if (comPort === comPortOrder[0]) {
+                displayNotification("notification1", `${comPort} Disconnected!`, false);
+            }
+            if (comPort === comPortOrder[1]) {
+                displayNotification("notification2", `${comPort} Disconnected!`, false);
+            }
+        }
+        comPortStatus[comPort] = false; // Reset for next check
+    });
+
+    // Ensure "No COM available" message is displayed if ports are removed
+    if (!comPortOrder[0]) {
+        displayNotification("notification1", `No COM port available`, false);
+    }
+    if (!comPortOrder[1]) {
+        displayNotification("notification2", `No COM port available`, false);
+    }
+}, 1000); // ✅ **Check every 1 second**
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////
         document.getElementById('logout-btn').addEventListener('click', function() {
             window.location.href = "{% url 'home' %}";
         });

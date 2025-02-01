@@ -6,7 +6,6 @@
 
     <style>
         .data-box {
-            border: 1px solid #ccc;
             padding: 10px;
             margin-bottom: 20px;
             overflow-x: auto;
@@ -16,7 +15,6 @@
          
         .first-table {
             background-color: #fff;
-            border: 1px solid #ccc;
             text-align: center;
         }
         .label {
@@ -97,12 +95,44 @@
         .table-striped tbody tr:nth-of-type(odd) {
             background-color: #f9f9f9; /* Alternate row background color */
         }
-        #prevButton{
-            width: 50px;
-            background-color: red;
-            color: white;
-        }
+#prevButton{
+    width: 80px;
+    height: 35px;
+    margin-top: -35px;
+    float: right;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+}
 
+#excel_btn{
+    width: 150px;
+    height: 35px;
+    margin-top: -35px;
+    margin-left: 60px;
+    background-color: orange;
+    color: white;
+    font-weight: bold;
+}
+
+#mail_btn {
+    width: 150px;
+    height: 35px;
+    margin-top: -35px;
+    background-color: green;
+    color: white;
+    font-weight: bold;
+    margin-left: 200px;
+}
+
+#pdf_btn {
+    width: 150px;
+    height: 35px;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    float: left;
+}
 #popupMessage{
     display: none;
     position: fixed; 
@@ -120,35 +150,64 @@
     padding: 10px;
     z-index: 1000;
 }
+
+.container-1{
+    height: 35px;
+    background-color: blue;
+}
+
+
+#heading{
+    text-align: center;
+    font-weight: bold;
+    background-color: blue;
+    color: white;
+    height: 25px;
+    margin-top: 0px;
+
+}
+
+.container {
+    margin: auto;
+    border: 2px solid black;
+    margin-top: 0px;
+}     
+
     </style>
 </head>
 <body>
-    <button id="prevButton" class="arrow-button no-pdf">⬅</button>
-
-    <div class="dropdown no-pdf" id="dropdown">
-        <div class="dropdown-content no-pdf" id="dropdownContent">
-            <form id="exportForm" class="no-pdf" method="post" action="{% url 'jobReport' %}">
+    
+    <div class="container">
+        <div class="container-1">
+            <div id="heading"></div>
+            <form id="exportForm" method="post" action="{% url 'jobReport' %}" style="margin-top:-25px ;">
                 {% csrf_token %}
-                <label for="email" class="no-pdf"></label>
-                <select class="no-pdf" name="recipient_email" id="recipientEmail">
-                    <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
-                    <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
-                </select>
-                <button class="no-pdf" type="submit" onclick="hideDropdown()" name="export_type" value="pdf">Export to PDF</button>
+                <div class="button-container">
+                    <!-- Send Mail Button (Left Side) -->
+                    <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
+                    
+                    <!-- Email Selection Dropdown -->
+                    <label for="email" class="no-pdf"></label>
+                    <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 35px; ">
+                        <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
+                        <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
+                    </select>
                 
-                <button class="no-pdf" type="submit" onclick="hideDropdown()" name="export_type" value="send_mail">Send Mail</button>
-                <button class="no-pdf" type="submit" name="export_type" onclick="exportToExcel(event)" value="excel">Export to Excel</button>
+                    <!-- PDF Conversion Button (Right Side) -->
+                    <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
+                    <button type="submit" class="excel no-pdf" name="export_type" id="excel_btn" onclick="exportToExcel(event)" value="excel">Export to Excel</button>
+                </div>
+                
             </form>
-            
+            <div><button id="prevButton" class="no-pdf" >BACK</button></div>  
         </div>
-        <button class="no-pdf" id="save_btn" onclick="toggleDropdown()">&#8285;</button>
-    </div>
-       
     
-    <!-- Add this in your consolidateSrNo.html -->
-    <div id="popupMessage" class="no-pdf">
-    </div>
     
+    
+     <!-- Add this in your consolidateSrNo.html -->
+    <div id="popupMessage" class="no-pdf"></div>
+
+
     <script>
 
         function hideDropdown() {
@@ -222,7 +281,7 @@ if (successMessage) {
         </div>
     </div>
 {% endif %}
-
+</div>
 <!-- JavaScript to dynamically update status counts and print to console -->
 <script>
 

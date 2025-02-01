@@ -8,7 +8,7 @@ import pytz
 from django.utils import timezone  
 from django.db.models import Q
 
-from app.models import MasterIntervalSettings, MeasurementData, ResetCount, ShiftSettings, TableOneData, Master_settings, measure_data, parameter_settings
+from app.models import MasterIntervalSettings, MeasurementData, ParameterFactor, ResetCount, ShiftSettings, TableOneData, Master_settings, measure_data, parameter_settings
 
 
 def process_row(row):
@@ -108,6 +108,9 @@ def measurement(request):
             parameter_settings_qs = parameter_settings.objects.filter(model_id=part_model, hide_checkbox=False,attribute=False).values_list('parameter_name', flat=True).order_by('id')
             print("parameter_settings_qs",parameter_settings_qs)
 
+            parameter_factor_values = ParameterFactor.objects.filter(part_model=part_model).values('parameter_name', 'method', 'value').order_by('id')
+            print("parameter_factor_values", parameter_factor_values)
+
             parameter_attribute = parameter_settings.objects.filter(model_id=part_model, attribute=True).values_list('parameter_name', flat=True)
             print("parameter_attribute",parameter_attribute)
 
@@ -149,6 +152,7 @@ def measurement(request):
                 'step_no_values': list(parameter_settings_qs.values_list('step_no', flat=True)),
                 'customer_name_values': customer_name_values,
                 'parameter_attribute':list(parameter_attribute),
+                'parameter_factor_values': list(parameter_factor_values),
             }
 
             return JsonResponse(response_data)

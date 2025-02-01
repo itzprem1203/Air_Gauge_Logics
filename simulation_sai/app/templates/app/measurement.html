@@ -228,6 +228,7 @@ input[type=checkbox] {
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.3s ease;
+            margin-left: 25px;
            
         }
 
@@ -236,26 +237,14 @@ input[type=checkbox] {
           
         }
 
-        .arrow-icon {
-            width: 0; 
-            height: 0; 
-            border-top: 10px solid transparent;
-            border-bottom: 10px solid transparent; 
-            border-right: 20px solid white; /* White arrow */
-            position: relative;
-            margin-right: 8px; /* Space between arrow and text */
+        .arrow-tail{
+            text-align: center;
+            font-size: 17px;
+            font-weight: bold;
+            
         }
 
-        .arrow-tail {
-            position: absolute;
-            top: -5px; /* Adjusts the position of the tail */
-            left: 0;
-            width: 20px; /* Width of the tail */
-            height: 10px; /* Height of the tail */
-            background-color: white; /* White tail */
-            transform: rotate(-180deg); /* Rotates the tail to be horizontal */
-            transform-origin: right center; /* Adjusts the rotation origin */
-        }
+        
 
         .center-notification {
     display: none; /* Initially hidden */
@@ -340,12 +329,8 @@ input[type=checkbox] {
 
 <div class="box-1" id="box1">
 
-    <button class="arrow-button"  onclick="redirectToMeasurebox()">
-        <div class="arrow-icon">
-            <div class="arrow-tail"></div>
-        </div> 
-       </button>
     
+
     <label for="date" style="width: 50px; margin-left:10px;">DATE:</label>
     <input type="text" id="date" style="width: 210px;background-color:#1a7d9e ;color: white;">
 
@@ -367,8 +352,13 @@ input[type=checkbox] {
     
     <button class="reset-button" id="reset-button">
         <span class="reset-symbol">&#8634;</span>
-    </button><br>
+    </button>
       
+    <button class="arrow-button"  onclick="redirectToMeasurebox()">
+        <div class="arrow-icon">
+            <div class="arrow-tail"> BACK </div>
+        </div> 
+       </button><br>
 
 
     
@@ -503,17 +493,17 @@ input[type=checkbox] {
       </div><br>
   
 
-<textarea id="probe-A" style="display: none;"></textarea>
-    <textarea id="probe-B" style="display: none;"></textarea>
-    <textarea id="probe-C" style="display: none;"></textarea>
-    <textarea id="probe-D" style="display: none;"></textarea>
-    <textarea id="probe-E" style="display: none;"></textarea>
-    <textarea id="probe-F" style="display: none;"></textarea>
-    <textarea id="probe-G" style="display: none;"></textarea>
-    <textarea id="probe-H" style="display: none;"></textarea>
-    <textarea id="probe-I" style="display: none;"></textarea>
-    <textarea id="probe-J" style="display: none;"></textarea>
-    <textarea id="probe-K" style="display: none;"></textarea>
+<textarea id="probe-A" style="display: none;" ></textarea>
+    <textarea id="probe-B" style="display: none;" ></textarea>
+    <textarea id="probe-C" style="display: none;" ></textarea>
+    <textarea id="probe-D" style="display: none;" ></textarea>
+    <textarea id="probe-E" style="display: none;" ></textarea>
+    <textarea id="probe-F" style="display: none;" ></textarea>
+    <textarea id="probe-G" style="display: none;" ></textarea>
+    <textarea id="probe-H" style="display: none;" ></textarea>
+    <textarea id="probe-I" style="display: none;" ></textarea>
+    <textarea id="probe-J" style="display: none;" ></textarea>
+    <textarea id="probe-K" style="display: none;" ></textarea>
 
 
 
@@ -1036,7 +1026,8 @@ $(document).ready(function() {
                         response.utlValues[i],
                         indicatorBox, 
                         indicatorBox1, 
-                        statusCell
+                        statusCell,
+                        response.parameter_factor_values,
                     );
                 }
                 
@@ -1438,34 +1429,47 @@ function moveToNextStep() {
 }
 
 function displaySerialData(parameterNameValues,probe_value, e_value, d_value, o1_value, readingsInput, measurementMode, step_no, lsl, 
-usl, ltl, utl,indicatorBox,indicatorBox1,statusCell) {
+usl, ltl, utl,indicatorBox,indicatorBox1,statusCell,parameterFactorValues) {
 
-    console.log("parameterNameValues",parameterNameValues);
+    console.log("parameterNameValues:", parameterNameValues);
+    console.log("parameterFactorValues:", parameterFactorValues);
     console.log("step_no:", step_no);
-    console.log("indicatorBox,indicatorBox1:",indicatorBox,indicatorBox1,readingsInput);
-//////////////////////////////////////////////////////////
+    console.log("indicatorBox, indicatorBox1:", indicatorBox, indicatorBox1, readingsInput);
 
-
-//////////////////////////////////////////////////////////////
     // Retrieve textarea ID based on probeValue
-    var textareaId = mapProbeToTextareaId(probe_value);
-    var textarea = document.getElementById(textareaId);
+    const textareaId = mapProbeToTextareaId(probe_value);
+    const textarea = document.getElementById(textareaId);
 
     // Check if textarea exists
     if (textarea) {
         // Function to calculate and update the displayOutput
         function updateDisplayOutput() {
             const newSerialData = parseFloat(textarea.value);
-            // Log the new serial data to the console
-            // Calculate displayOutput separately for each input
+
+            // Base calculation for displayOutput
             let displayOutput = e_value + (newSerialData * d_value + o1_value);
 
             if (isNaN(displayOutput)) {
-            displayOutput = 0;
-        }
+                displayOutput = 0;
+            }
 
+            // Modify displayOutput based on parameterFactorValues
+            for (let i = 0; i < parameterFactorValues.length; i++) {
+                const factor = parameterFactorValues[i]; // {parameter_name, method, value}
+                const parameterName = factor.parameter_name;
+                const method = factor.method; // '+' or '-'
+                const value = parseFloat(factor.value);
 
-            console.log("displayOutput",displayOutput)
+                if (parameterName === parameterNameValues) {
+                    if (method === '+') {
+                        displayOutput += value;
+                    } else if (method === '-') {
+                        displayOutput -= value;
+                    }
+                }
+            }
+
+            console.log("Updated displayOutput:", displayOutput);
 
             // Update the readings input only when the continuous update is active and step_no matches
             if (continuousUpdateInterval && step_no === currentStep) {
@@ -2281,25 +2285,51 @@ function mapProbeToTextareaId(probeNumber) {
 
 /////////////////////////////////////////////////////////////////////////////////
 
-$(document).ready(function () {
-            const ws = new WebSocket('ws://localhost:8000/ws/comport/');
-            
-            ws.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                if (data.message) {
-                    const channels = data.message.match(/[A-K]\+[^A-K]*/g);
-                    if (channels) {
-                        channels.forEach(channel => {
-                            const channelId = channel.charAt(0);
-                            const channelData = channel.substr(2); // Get the data after '+'
-                            $(`#probe-${channelId}`).val(channelData);
-                        });
-                    }
-                }
-            };
-        });
- 
 
+$(document).ready(function () { 
+    const ws = new WebSocket('ws://localhost:8000/ws/comport/');
+
+    let mergedChannels = {}; // Store channel data from all COM ports
+
+    ws.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+
+        if (data.message) {
+            let comPort = data.com_port;  // Get COM port dynamically
+            let message = data.message;
+
+            // Extract channels (A-K with + or - followed by a number)
+            let matches = message.match(/[A-K][\+\-]\d+/g) || [];
+
+            // Store data for the corresponding COM port
+            if (!mergedChannels[comPort]) {
+                mergedChannels[comPort] = [];
+            }
+            mergedChannels[comPort] = matches; // Update channel data for this COM
+
+            // Merge all COMs into a single list
+            let allChannels = Object.values(mergedChannels).flat();
+
+            console.log(`Merged COM Data: ${allChannels.join(", ")}`);
+
+            // Reset text areas before assigning new values
+            $("textarea[id^='probe-']").val("");
+
+            // Get available textareas dynamically (equal to merged channel length)
+            let availableTextareas = $("textarea[id^='probe-']").toArray().slice(0, allChannels.length);
+
+            // Assign only required values
+            allChannels.forEach((channelData, index) => {
+                if (index < availableTextareas.length) {
+                    let value = channelData.substring(2);  // Extract numeric value
+                    let textarea = availableTextareas[index]; // Assign to next available textarea
+                    
+                    $(textarea).val(value); // Update textarea
+                }
+            });
+        }
+    };
+});
 </script>
         
 

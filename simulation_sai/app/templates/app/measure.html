@@ -5,10 +5,10 @@ Mastering Page
 {% block content %}
 <style>
     .full-page-box {
-         display: flex;
+        height: 100vh;
+        width: 100%;
          flex-direction: column;
-         background-color: lightgrey;
-         padding: 20px; 
+         background-color: lightgrey; 
          box-sizing: border-box;
          
      }
@@ -44,8 +44,8 @@ Mastering Page
       
  
      .left-box {
-         width: 350px;
-         height: 100px;
+         width: 50vh;
+         height: 15vh;
          background-color: white; 
          margin-right: 10px;
          border: 2px solid black; 
@@ -101,7 +101,15 @@ Mastering Page
          #highMasterBtn{    
              margin-top: 10px;   
          }
-         
+         #back-btn{
+             background-color: red;
+             color:black;
+             height: 40px;
+             width: 80px;
+             float: right;
+             margin-top: -35px;
+               
+         }
          
         
  
@@ -143,10 +151,11 @@ Mastering Page
          border: 1px solid black;
          padding-top: 5px;
          font-weight: bold;
-         max-width: 200px;
+         max-width: 180px;
          margin-left: 1000px;
  
         }
+
 
 
 .reset-button {
@@ -214,17 +223,6 @@ Mastering Page
     align-items: center;
     gap: 5px; /* Add space between the elements */
 }
-
-
-#back-btn{
-             background-color: red;
-             color:black;
-             height: 40px;
-             width: 80px;
-             float: right;
-             margin-top: -35px;
-               
-         }
         
  </style>
  
@@ -235,10 +233,8 @@ Mastering Page
         <a href="{% url 'measurebox' %}" >
             <button type="button" id="back-btn"><b>Back</b></button>
             </a>
-        
     </div>
-    
-   
+        
 
     <div class="left-box">
         <label for="partModel">PART MODEL:</label>
@@ -478,40 +474,24 @@ function lowMasteringClick(response) {
                         success: function(response) {
                             console.log('Updated response received for low mastering:', response);
 
-
+                            // Perform the calculation based on updated values
+                            calculateMastering(response);
 
                             // Store the interval IDs for low mastering
                             var containers = document.querySelectorAll('.input-box-container');
                             containers.forEach(function(container) {
-                                var aValue = parseFloat(container.dataset.a); // Retrieve stored `a` value
-                                var inputBox2 = container.querySelector('.input2-box');
-                                if (inputBox2) {
-                                    inputBox2.value = aValue; // Update input2-box with `a` value
-                                    inputBox2.style.backgroundColor = '#00ff00'; // Optional: Highlight updated box
-                                }
-
-                                // Clear previous intervals related to input2-box
                                 var intervalId = containerIntervals[container.id];
                                 if (intervalId) {
-                                    clearInterval(intervalId);
+                                    lowMasteringIntervalIds.push(intervalId); // Track intervals for low mastering
                                 }
-
-                                var intervalId = setTimeout(function() {
-                                        inputBox2.value = ""; // Clear `a` value
-                                        inputBox2.style.backgroundColor = ''; // Reset background
-
-                                        // Display the output of the calculateMastering function
-                                        calculateMastering(response);
-                                    }, 2000); // Wait 5 seconds
-                                 // Example interval for demonstration
-                                lowMasteringIntervalIds.push(intervalId);
                             });
                         },
                         error: function(xhr, status, error) {
                             console.error('Error retrieving new values for low mastering', error);
+                           
                         }
                     });
-                }, 500); // Wait for 0.5 seconds before retrieving the new values
+                }, 500); // Wait for 3 seconds before retrieving the new values
             },
             error: function(xhr, status, error) {
                 console.error('Error sending low mastering data', error);
@@ -692,7 +672,6 @@ function processContainers(type, response) {
             var digits = response.digits[index];
             var jobDia = response.job_dia[index]; // Get the job_dia ("ID" or "OD")
 
-
             var inputBoxValue;
             var a, a1, b, b1;
 
@@ -723,14 +702,6 @@ function processContainers(type, response) {
                         // Store a and a1 in the container for later use
                         container.dataset.a = a;
                         container.dataset.a1 = a1;
-                        var inputBox2 = container.querySelector('.input2-box');
-                        if (inputBox2) {
-                            inputBox2.value = a.toFixed(digits); // Update inputBox2 with the 'a' value
-                            console.log("inputBox2 updated with low value:", a);
-
-                            // Optionally, change the background color or add more logic as needed
-                            inputBox2.style.backgroundColor = '#00ff00'; // Example: Set background color to green for demonstration
-                        }
                     } else if (type === 'high') {
                         // Retrieve 'a' and 'a1' from the container's dataset
                         a = parseFloat(container.dataset.a);
@@ -931,7 +902,7 @@ function updateMastering(selectedRadioButtonId) {
     var containers = document.querySelectorAll('.input-box-container');
 
     // Clear console before logging new results
-    
+    console.clear();
 
     // Variable to track if a matching container is found
     var matchingContainers = [];
@@ -1131,8 +1102,6 @@ function updateValues() {
 
                 console.log('Parameter Name:', response.parameter_names[i]);
                 console.log('Digit:', response.digits[i]);
-                console.log('analog_zero:', response.analog_zero[i]);
-                console.log('reference_value:', response.reference_value[i]);
                 console.log('High MV:', response.high_mv[i]);
                 console.log('Low MV:', response.low_mv[i]);
                 console.log('LSL:', response.lsl[i]);
@@ -1201,50 +1170,24 @@ function mapProbeToTextareaId(probeNumber) {
 
     
 
-$(document).ready(function () { 
-    const ws = new WebSocket('ws://localhost:8000/ws/comport/');
-
-    let mergedChannels = {}; // Store channel data from all COM ports
-
-    ws.onmessage = function(event) {
-        const data = JSON.parse(event.data);
-
-        if (data.message) {
-            let comPort = data.com_port;  // Get COM port dynamically
-            let message = data.message;
-
-            // Extract channels (A-K with + or - followed by a number)
-            let matches = message.match(/[A-K][\+\-]\d+/g) || [];
-
-            // Store data for the corresponding COM port
-            if (!mergedChannels[comPort]) {
-                mergedChannels[comPort] = [];
-            }
-            mergedChannels[comPort] = matches; // Update channel data for this COM
-
-            // Merge all COMs into a single list
-            let allChannels = Object.values(mergedChannels).flat();
-
-            console.log(`Merged COM Data: ${allChannels.join(", ")}`);
-
-            // Reset text areas before assigning new values
-            $("textarea[id^='probe-']").val("");
-
-            // Get available textareas dynamically (equal to merged channel length)
-            let availableTextareas = $("textarea[id^='probe-']").toArray().slice(0, allChannels.length);
-
-            // Assign only required values
-            allChannels.forEach((channelData, index) => {
-                if (index < availableTextareas.length) {
-                    let value = channelData.substring(2);  // Extract numeric value
-                    let textarea = availableTextareas[index]; // Assign to next available textarea
-                    
-                    $(textarea).val(value); // Update textarea
+$(document).ready(function () {
+            const ws = new WebSocket('ws://localhost:8000/ws/comport/');
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.message) {
+                    const channels = data.message.match(/[A-K]\+[^A-K]*/g);
+                    if (channels) {
+                        channels.forEach(channel => {
+                            const channelId = channel.charAt(0);
+                            const channelData = channel.substr(2); // Get the data after '+'
+                            $(`#probe-${channelId}`).val(channelData);
+                        });
+                    }
                 }
-            });
-        }
-    };
-});
+            };
+        });
+ 
 ///////////////////////////////////
 
 

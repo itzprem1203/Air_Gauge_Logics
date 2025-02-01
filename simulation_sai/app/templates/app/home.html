@@ -53,6 +53,7 @@
                     </div>
                 </div>
                 <br>
+                
                 <button type="submit" id="login-button" style="margin-left: 150px;"><b>Login</b></button>
             </form>
             {% if error_message %}
@@ -69,13 +70,6 @@
     <h1 class="right-align">-Accuracy is Our Moto & Passion</h1>
     <h1 class="right-align-1">Sales : +91 7448411234</h1>
 
-    <input type="text" id="db_port" value="{{ comport_com_port }}">
-    <input type="text" id="com_ports" value="{{ ports_string }}">
-    <input type="text" id="baud_rate" value="{{ comport_baud_rate }}">
-    <input type="text" id="parity" value="{{ comport_parity }}">
-    <input type="text" id="stopbit" value="{{ comport_stopbit }}">
-    <input type="text" id="databit" value="{{ comport_databit }}">
-
 
     <div class="box" id="clock-box" hidden></div>
 
@@ -85,10 +79,7 @@
         <input id="idValue" type="text" value=" {{ id }}" hidden>
     </div>
     
-    <div id="notification" style="display: none; padding: 10px; color: white; position: fixed; top: 10px; right: 10px; z-index: 1000;">
-        <!-- Notification message will appear here -->
-    </div>
-    
+    <textarea id="serial-data-display" cols="50" rows="10" readonly hidden></textarea>
 
 
 
@@ -100,9 +91,11 @@ let alertShown = false; // Track if the alert has been shown
 
 function updateClock() {
     var id_value = document.getElementById("idValue").value.trim();
-    var backupDate = document.getElementById("back_date").value.trim();
+    var backupDateStr = document.getElementById("back_date").value.trim();
     var confirmValue = document.getElementById("confirm").value.trim();
     var currentDate = new Date();
+
+    // Display current date and time in the clock box
     var hours = currentDate.getHours();
     var minutes = currentDate.getMinutes();
     var seconds = currentDate.getSeconds();
@@ -112,31 +105,45 @@ function updateClock() {
     minutes = minutes < 10 ? '0' + minutes : minutes;
     seconds = seconds < 10 ? '0' + seconds : seconds;
     var currentTime = hours + ':' + minutes + ':' + seconds + ' ' + ampm;
-
     var day = currentDate.getDate();
     var month = currentDate.getMonth() + 1; // Month is zero-based
     var year = currentDate.getFullYear();
     var currentDateFormatted = day + '-' + month + '-' + year + ' ' + currentTime;
-
-    // Display current date and time in the clock box
     document.getElementById("clock-box").innerHTML = currentDateFormatted;
 
+    // Parse the backup date string (format: dd-mm-yyyy hh:mm:ss AM/PM)
+    var [backupDay, backupMonth, backupYearAndTime] = backupDateStr.split('-');
+    var [backupYear, backupTime] = backupYearAndTime.split(' ');
+    var [backupHourMinSec, backupAmPm] = backupTime.split(' ');
+    var [backupHours, backupMinutes, backupSeconds] = backupHourMinSec.split(':');
 
-    if (confirmValue === 'False' && !alertShown) {
-        // If the current date and time >= backup date, show the alert box
-        if (backupDate >= currentDateFormatted) {
-            // Display the custom alert message
-            alert("The backup date and time have been reached!");
+    // Convert the backup date and time to a Date object
+    backupHours = parseInt(backupHours);
+    if (backupAmPm === 'PM' && backupHours < 12) backupHours += 12; // Adjust for PM
+    if (backupAmPm === 'AM' && backupHours === 12) backupHours = 0; // Handle midnight (12 AM)
 
-            confirmValue = 'True';
-            document.getElementById("confirm").value = confirmValue; // Update the DOM element if needed
-            alertShown = true; // Set alertShown to true to prevent future alerts
-            
-            // Send confirmValue and backupDate to the Django view
-            sendDataToBackend(confirmValue, backupDate, id_value);
-            return;
-        }
+    var backupDate = new Date(
+        parseInt(backupYear), 
+        parseInt(backupMonth) - 1, 
+        parseInt(backupDay),
+        backupHours,
+        parseInt(backupMinutes),
+        parseInt(backupSeconds)
+    );
+
+    // If current date is greater than or equal to backup date and confirm value is 'False'
+    if (currentDate >= backupDate && confirmValue === 'False' && !alertShown) {
+        // Display the custom alert message
+        alert("The backup date and time have been reached!");
+
+        confirmValue = 'True';
+        document.getElementById("confirm").value = confirmValue; // Update the DOM element if needed
+        alertShown = true; // Set alertShown to true to prevent future alerts
+
+        // Send confirmValue and backupDate to the Django view
+        sendDataToBackend(confirmValue, backupDateStr, id_value);
     }
+
     // Call this function again after 1 second
     setTimeout(updateClock, 1000);
 }
@@ -150,6 +157,7 @@ document.getElementById("confirm").addEventListener('change', function() {
 
 // Start the clock
 updateClock();
+
 
 function sendDataToBackend(confirmValue, backupDate, id_value) {
     console.log('Sending Data:', {

@@ -20,3 +20,5 @@ from .xBarSchart import xBarSchart
 from .histogram import histogram
 from .backup import backup
 from .pieChart import pieChart
+from .measure import measure
+from .masterReport import masterReport

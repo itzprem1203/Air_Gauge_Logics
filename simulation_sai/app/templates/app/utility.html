@@ -28,7 +28,7 @@ Utility
     padding-left: 5px;
   }
 
-.inner-box-1, .inner-box-2, .inner-box-3, .inner-box-4{
+.inner-box-1, .inner-box-2, .inner-box-3, .inner-box-4 ,.inner-box-5{
     width: 230px; 
     height: 65px;
     background-color:rgb(245, 188, 83);
@@ -44,7 +44,7 @@ Utility
     
   }
 
-.item-1, .item-2, .item-3, .item-4{
+.item-1, .item-2, .item-3, .item-4, .item-5{
     border: 1px solid #ccc;
     padding: 20px;
     text-align: center;
@@ -87,7 +87,7 @@ Utility
              margin-left: 65px;
              margin-top: 30px;
          }
-  #save-btn-1,#save-btn-2,#save-btn-3,#save-btn-4{
+  #save-btn-1,#save-btn-2,#save-btn-3,#save-btn-4,#save-btn-5{
       background-color: green;
       color:black;           
       height: 50px;
@@ -208,6 +208,11 @@ Utility
     color: #0277bd; /* Softer blue text color for inputs */
 }
 
+.item-5 select{
+    text-align: center;
+    font-size: 1vw;
+    width: 26%;
+}
 
 </style>
 
@@ -216,7 +221,8 @@ Utility
     <div id="set_master_interval" class="inner-box-1" onclick="enlargeItem(1),showItem('item-1')">Set Master Interval</div>
     <div id="shift_settings" class="inner-box-2" onclick="enlargeItem(2),showItem('item-2')">Shift Settings</div>
     <div id="customer_input" class="inner-box-3" onclick="enlargeItem(3),showItem('item-3')">Customer Details</div>
-    <div id="backup_data" class="inner-box-4" onclick="enlargeItem(4),showItem('item-4')">Backup Data</div>        
+    <div id="backup_data" class="inner-box-4" onclick="enlargeItem(4),showItem('item-4')">Backup Data</div>
+    <div id="parameter_factor" class="inner-box-5" onclick="enlargeItem(5),showItem('item-5')">Parameter Factor</div>        
 </div>
 
 <div class="box" id="boxContent"style="overflow-x: auto;overflow-y:auto;">
@@ -803,6 +809,166 @@ document.getElementById('save-btn-4').addEventListener('click', function() {
         </script>
     
 </div>
+
+
+
+<div class="item item-5" id="parameter_factor">
+    <center style="color: purple; text-shadow: 2px 2px 4px rgb(240, 118, 240);">
+        <h2><b>Parameter Factor</b></h2>
+    </center>
+
+    <label for="part_model">PART MODEL:</label>
+    {% if part_model_values %}
+        <select id="part_model" name="part_model" required onchange="sendPartModelValue()">
+            <option value="" disabled selected>Select a part model</option>
+            {% for part_model in part_model_values %}
+                <option value="{{ part_model }}">{{ part_model }}</option>
+            {% endfor %}
+        </select>
+    {% else %}
+        <p>No part models available.</p>
+    {% endif %}
+    <br>
+
+    
+
+    <label for="parameter_name" >PARAMETER NAME:</label>
+    <select id="parameter_name" name="parameter_name" required>
+        
+    </select> <br>
+
+    <label for="method">METHOD:</label>
+    <select id="method" name="method" required>
+        <option value="+">+</option>
+        <option value="-">-</option>
+    </select>
+    <br>
+
+    <label for="value" >VALUE:</label>
+    <input type="text" id="value" name="value"  required> <br>
+    
+
+    <a href="{% url 'index' %}">
+        <button type="button" id="cancel-btn"><b>Cancel</b></button>
+    </a>
+    <button type="submit" id="save-btn-5"><b>Save</b></button>
+
+    </div>
+
+    <script>
+        // Function to send the selected part_model value to the backend
+function sendPartModelValue() {
+    const selectElement = document.getElementById('part_model');
+    const selectedValue = selectElement.value;
+
+    // Sending a POST request to the backend
+    fetch('/utility/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken') // Add CSRF token
+        },
+        body: JSON.stringify({ part_model: selectedValue })
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Response from server:', data);
+
+            // Now update the parameter_name dropdown
+            const parameterNameDropdown = document.getElementById('parameter_name');
+            
+            // Clear the current options
+            parameterNameDropdown.innerHTML = '';
+
+            // Check if there are parameter names returned
+            if (data.parameter_names && data.parameter_names.length > 0) {
+                // Add an initial "Select" option
+               
+
+                // Populate the dropdown with parameter names
+                data.parameter_names.forEach(param => {
+                    const option = document.createElement('option');
+                    option.value = param;
+                    option.textContent = param;
+                    parameterNameDropdown.appendChild(option);
+                });
+            } else {
+                // If no parameter names, display a message
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No parameters available';
+                parameterNameDropdown.appendChild(option);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
+// Function to send all form data to the backend when the form is submitted
+function handleSaveButtonClick(event) {
+    event.preventDefault();  // Prevent the default form submission behavior
+
+    const partModel = document.getElementById('part_model').value;
+    const parameterName = document.getElementById('parameter_name').value;
+    const method = document.getElementById('method').value;
+    const value = document.getElementById('value').value;
+
+    // Prepare the data to send in the request
+    const formData = {
+        id :"parameter_factor",
+        part_model: partModel,
+        parameter_name: parameterName,
+        method: method,
+        value: value
+    };
+
+    // Send a POST request to save the data
+    fetch('/utility/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')  // Add CSRF token
+        },
+        body: JSON.stringify(formData)
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Data saved successfully:', data);
+            alert('Data saved successfully!');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving data.');
+        });
+}
+
+// Attach event listener to the save button
+document.getElementById('save-btn-5').addEventListener('click', handleSaveButtonClick);
+
+    
+        // Helper function to get the CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    
+        // Send the value when the page is loaded
+        window.onload = () => {
+            sendPartModelValue();
+        };
+    </script>
+
 
 </div>
 

@@ -13,13 +13,16 @@
             border: 2px solid black;
             margin-top: 0px;
         }
-        #heading{
-            margin-top: 0px;
-            color:white;
-           background-color: blue;
-            text-align: center;
-           
-        }
+#heading{
+    text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    background-color: blue;
+    color: white;
+    height: 25px;
+    margin-top: 0px;
+
+}
         #value_list {
             border: 2px solid black;
     background-color: rgb(241, 169, 169);
@@ -44,30 +47,33 @@
 }
 
 #prevButton{
-            width: 70px;
-            height: 40px;
-            background-color: red;
-            color: white;
-            font-weight: bold;
-        }
-        #mail_btn {
-    width: 150px;
-    height: 40px;
-    margin-top: 100px;
-    background-color: blue;
-    color: white;
-    font-weight: bold;
-}
-
-#pdf_btn {
-margin-left: 600px;
-    width: 150px;
-    height: 40px;
+    width: 80px;
+    height: 35px;
+    margin-top: -35px;
+    float: right;
     background-color: red;
     color: white;
     font-weight: bold;
 }
-        #popupMessage{
+#mail_btn {
+    width: 150px;
+    height: 35px;
+    margin-top: -35px;
+    background-color: green;
+    color: white;
+    font-weight: bold;
+    margin-left: 500px;
+}
+
+#pdf_btn {
+    width: 150px;
+    height: 35px;
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    float: left;
+}
+#popupMessage{
     display: none;
     position: fixed; 
     top: 20px;
@@ -85,16 +91,40 @@ margin-left: 600px;
     z-index: 1000;
 }
 
+.container-1{
+    height: 35px;
+    background-color: blue;
+}
+
+
 </style>
-<body>
+<body >
     <div class="container">
-        <div>
-            <button id="prevButton" class="no-pdf">BACK</button>
-            <h1 id="heading">PIE CHART</h1>
+        <div class="container-1">
+            <div id="heading">PIE CHART</div>
+            <form id="exportForm" method="post" action="{% url 'pieChart' %}" style="margin-top:-25px ;">
+                {% csrf_token %}
+                <div class="button-container">
+                    <!-- Send Mail Button (Left Side) -->
+                    <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
+                    
+                    <!-- Email Selection Dropdown -->
+                    <label for="email" class="no-pdf"></label>
+                    <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 35px; ">
+                        <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
+                        <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
+                    </select>
+                
+                    <!-- PDF Conversion Button (Right Side) -->
+                    <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
+                </div>
+                
+            </form>
+            <div><button id="prevButton" class="no-pdf" >BACK</button></div>  
         </div>
-       
-        <!-- Add this in your consolidateSrNo.html -->
-        <div id="popupMessage" class="no-pdf"></div>
+
+     <!-- Add this in your consolidateSrNo.html -->
+<div id="popupMessage" class="no-pdf"></div>
 
         <script>
         // Get the success message from the context if it exists
@@ -140,25 +170,7 @@ margin-left: 600px;
         <!-- <div class="item">Item 10</div> -->
     </div>
     {% endif %}
-    <div class="dropdown-content" id="dropdownContent">
-        <form id="exportForm" method="post" action="{% url 'pieChart' %}">
-            {% csrf_token %}
-            <div class="button-container">
-                <!-- Send Mail Button (Left Side) -->
-                <button type="submit" class="no-pdf" onclick="hideDropdown()" name="export_type" value="send_mail" id="mail_btn">Send Mail</button>
-                
-                <!-- Email Selection Dropdown -->
-                <label for="email" class="no-pdf"></label>
-                <select name="recipient_email" class="no-pdf" id="recipientEmail" style="background-color: yellow; height: 40px;">
-                    <option class="no-pdf" value="{{ email_1 }}">{{ email_1 }}</option>
-                    <option class="no-pdf" value="{{ email_2 }}">{{ email_2 }}</option>
-                </select>
-            
-                <!-- PDF Conversion Button (Right Side) -->
-                <button type="submit" name="export_type" value="pdf" id="pdf_btn" class="no-pdf">PDF CONVERSION</button>
-            </div>
-        </form>
-    </div>
+    
     </div>
     <script>
         document.getElementById('prevButton').addEventListener('click', function() {

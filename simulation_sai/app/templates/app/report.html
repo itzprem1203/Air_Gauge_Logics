@@ -879,6 +879,24 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
       
+
+document.addEventListener("DOMContentLoaded", function() {
+    // Find the button element by its ID
+    var reportBtn = document.getElementById("report_btn_6");
+
+    // Add click event listener to the button
+    reportBtn.addEventListener("click", function(event) {
+
+        event.preventDefault();
+
+        // Add a 5-second delay (5000 milliseconds) before redirecting
+        setTimeout(function() {
+        // Redirect to the desired URL
+        window.location.href = '/masterReport/';
+        }, 2000);
+    });
+});
+
 </script>
 
 {% endblock content %}

@@ -173,23 +173,25 @@ Parameter Settings
     </label><br>
 
     <label for="partModel">PART MODEL:</label>
-    <input type="text" id="partModel" readonly>
+    <input type="text" id="partModel" readonly required>
 
     <label for="analog_zero">ANALOG ZERO:</label>
-    <input type="text" id="analog_zero" style="width: 10%;" value="{{ value.analog_zero }}" oninput="validateInteger(this)" >
-    <label for="high_mv" style="text-align: right;margin-left: 5px;">HIGH M-V:</label>
-    <input type="text" id="high_mv" style="width: 10%;" value="{{ value.high_mv }}" oninput="validateInteger(this)" ><br>
+<input type="text" id="analog_zero" style="width: 10%;" value="{{ value.analog_zero }}" oninput="validateInteger(this)">
 
-    <label for="parameter_name">PARAMETER NAME:</label>
-    <input type="text" id="parameter_name" value="{{ value.parameter_name }}">
+<label for="high_mv" style="text-align: right;margin-left: 5px;">HIGH M-V:</label>
+<input type="text" id="high_mv" style="width: 10%;" value="{{ value.high_mv }}" oninput="validateInteger(this)"><br>
 
-    <label for="reference_value">REFERENCE VALUE:</label>
-    <input type="text" id="reference_value" style="width: 10%;" value="{{ value.reference_value }}" oninput="validateInteger(this)" >
-    <label for="low_mv" style="text-align: right; margin-left: 5px;">LOW M-V:</label>
-    <input type="text" id="low_mv" style="width: 10%;" value="{{ value.low_mv }}" oninput="validateInteger(this)" ><br>
+<label for="parameter_name">PARAMETER NAME:</label>
+<input type="text" id="parameter_name" value="{{ value.parameter_name }}" required>
+
+<label for="reference_value">REFERENCE VALUE:</label>
+<input type="text" id="reference_value" style="width: 10%;" value="{{ value.reference_value }}" oninput="validateInteger(this)">
+
+<label for="low_mv" style="text-align: right; margin-left: 5px;">LOW M-V:</label>
+<input type="text" id="low_mv" style="width: 10%;" value="{{ value.low_mv }}" oninput="validateInteger(this)"><br>
 
     <label for="measurement_mode">MEASUREMENT MODE:</label>
-    <select id="measurement_mode" name="measurement_mode">
+    <select id="measurement_mode" name="measurement_mode" required>
         <option value="CUR" {% if value.measurement_mode == 'CUR' %}selected{% endif %}>CUR</option>
         <option value="MAX" {% if value.measurement_mode == 'MAX' %}selected{% endif %}>MAX</option>
         <option value="MIN" {% if value.measurement_mode == 'MIN' %}selected{% endif %}>MIN</option>
@@ -199,25 +201,25 @@ Parameter Settings
     
 
     <label for="job_dia">JOB DIA:</label>
-    <select id="job_dia" style="width: 10%;" name="job_dia">
+    <select id="job_dia" style="width: 10%;" name="job_dia" required>
         <option value="OD" {% if value.job_dia == 'OD' %}selected{% endif %}>OD</option>
         <option value="ID" {% if value.job_dia == 'ID' %}selected{% endif %}>ID</option>
     </select>
 
     <label for="nominal" style="margin-left: 40px;">NOMINAL:</label>
-    <input type="text" id="nominal" style="width: 10%;margin-left: -35px;" value="{{ value.nominal }}" oninput="validateInteger(this)"><br>
+    <input type="text" id="nominal" style="width: 10%;margin-left: -35px;" value="{{ value.nominal }}" oninput="validateInteger(this)" required><br>
 
     <label for="probe_no">PROBE NO:</label>
-    <input type="text" id="probe_no" name="probe_no"  value="{{ value.probe_no }}" oninput="this.value = this.value.toUpperCase()">
+    <input type="text" id="probe_no" name="probe_no"  value="{{ value.probe_no }}" oninput="this.value = this.value.toUpperCase()" required>
 
     <label for="usl" style="margin-left: 75px;">USL:</label>
-    <input type="text" id="usl" style="width: 10%;margin-left: -55px;" value="{{ value.usl }}" oninput="validateInteger(this)">
+    <input type="text" id="usl" style="width: 10%;margin-left: -55px;" value="{{ value.usl }}" oninput="validateInteger(this)" required>
 
     <label for="lsl" style="margin-left: 65px;">LSL:</label>
-    <input type="text" id="lsl" style="width: 10%;margin-left: -60px;" value="{{ value.lsl }}" oninput="validateInteger(this)"><br>
+    <input type="text" id="lsl" style="width: 10%;margin-left: -60px;" value="{{ value.lsl }}" oninput="validateInteger(this)" required><br>
 
     <label for="mastering" style="margin-top: 15px;">MASTERING GROUP:</label>
-    <select id="mastering" style="width: 15%;" name="mastering">
+    <select id="mastering" style="width: 15%;" name="mastering" required>
         <script>
             for (var i = 1; i <= 30; i++) {
                 document.write('<option value="' + i + '" {% if value.mastering == i %}selected{% endif %}>' + i + '</option>');
@@ -226,13 +228,13 @@ Parameter Settings
     </select>
 
     <label for="utl" style="margin-left: 65px;">UTL:</label>
-    <input type="text" id="utl" style="width: 10%;margin-left: -45px;" value="{{ value.utl }}" oninput="validateInteger(this)">
+    <input type="text" id="utl" style="width: 10%;margin-left: -45px;" value="{{ value.utl }}" oninput="validateInteger(this)" required>
 
     <label for="ltl" style="margin-left: 65px;">LTL:</label>
-    <input type="text" id="ltl" style="width: 10%;margin-left: -60px;" value="{{ value.ltl }}" oninput="validateInteger(this)"><br>
+    <input type="text" id="ltl" style="width: 10%;margin-left: -60px;" value="{{ value.ltl }}" oninput="validateInteger(this)" required><br>
 
     <label for="step_no">STEP NO:</label>
-    <select id="step_no" style="width: 15%;" name="step_no">
+    <select id="step_no" style="width: 15%;" name="step_no" required>
         <script>
             for (var i = 1; i <= 20; i++) {
                 document.write('<option value="' + i + '" {% if value.step_no == i %}selected{% endif %}>' + i + '</option>');
@@ -241,7 +243,7 @@ Parameter Settings
     </select>
 
     <label for="digits">NO OF DIGITS:</label>
-    <select id="digits" style="width: 10%;" name="digits">
+    <select id="digits" style="width: 10%;" name="digits" required>
         <script>
             for (var i = 1; i <= 4; i++) {
                 document.write('<option value="' + i + '" {% if value.digits == i %}selected{% endif %}>' + i + '</option>');
@@ -264,6 +266,11 @@ Parameter Settings
         </a>
 
         <script>
+
+
+
+
+
 
 document.addEventListener('keydown', function(event) {
         // Check for specific function keys
@@ -388,6 +395,35 @@ function handleAttributeChange() {
 
 // Updated validateForm function to only check required fields that are not disabled
 function validateForm() {
+
+    // Get radio button states
+    const singleRadio = document.getElementById('single').checked;
+    const doubleRadio = document.getElementById('double').checked;
+
+    // Get input fields
+    const analogZero = document.getElementById('analog_zero');
+    const referenceValue = document.getElementById('reference_value');
+    const highMV = document.getElementById('high_mv');
+    const lowMV = document.getElementById('low_mv');
+
+    // Clear previous required attributes
+    analogZero.removeAttribute('required');
+    referenceValue.removeAttribute('required');
+    highMV.removeAttribute('required');
+    lowMV.removeAttribute('required');
+
+    // Dynamically set required fields
+    if (singleRadio) {
+        analogZero.setAttribute('required', 'true');
+        referenceValue.setAttribute('required', 'true');
+    } else if (doubleRadio) {
+        highMV.setAttribute('required', 'true');
+        lowMV.setAttribute('required', 'true');
+    }
+
+
+
+
     const requiredFields = document.querySelectorAll('#box1 input[required]:not([disabled]), #box1 select[required]:not([disabled])');
     let allFilled = true;
 

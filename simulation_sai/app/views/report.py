@@ -8,7 +8,7 @@ from openpyxl import Workbook
 
 @csrf_exempt
 def report(request):
-    from app.models import MeasurementData, TableFiveData,parameter_settings,TableOneData,TableThreeData,TableTwoData,TableFourData
+    from app.models import MeasurementData, TableFiveData,parameter_settings, master_report ,TableOneData,TableThreeData,TableTwoData,TableFourData
     from app.models import consolidate_with_srno,consolidate_without_srno,parameterwise_report,jobwise_report,ShiftSettings
     if request.method == 'POST':
         try:
@@ -116,6 +116,37 @@ def report(request):
 
                 # Save the instance
                 instance.save()
+
+            elif form_id == 'master_report':
+                partModel = data.get('partModel')
+                parameterName = data.get('parameter_name')
+                operator = data.get('operator')
+                formatted_from_date = data.get('from_date')
+                formatted_to_date = data.get('to_date')
+                machine = data.get('machine')
+                vendor_code = data.get('vendor_code')
+                job_no = data.get('job_no')
+                shift = data.get('shift')
+                current_date_time = data.get('currentDateTime')
+
+                # Get or create consolidate_with_srno instance with id=1
+                instance, created = master_report.objects.get_or_create(id=1)
+
+                # Update the instance with the new data
+                instance.part_model = partModel
+                instance.parameter_name = parameterName
+                instance.operator = operator
+                instance.formatted_from_date = formatted_from_date
+                instance.formatted_to_date = formatted_to_date
+                instance.machine = machine
+                instance.vendor_code = vendor_code
+                instance.job_no = job_no
+                instance.shift = shift
+                instance.current_date_time = current_date_time
+
+                # Save the instance
+                instance.save()
+    
               
 
                 

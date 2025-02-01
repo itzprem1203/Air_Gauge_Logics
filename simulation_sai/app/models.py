@@ -1,4 +1,3 @@
-
 from datetime import datetime
 from django.db import models # type: ignore
 
@@ -55,6 +54,7 @@ class TableFiveData(models.Model):
 
 
 class comport_settings(models.Model):
+    card = models.CharField(max_length=50)
     com_port = models.CharField(max_length=50)
     baud_rate = models.IntegerField()
     bytesize = models.IntegerField()  
@@ -68,7 +68,9 @@ class comport_settings(models.Model):
 class Master_settings(models.Model):
     probe_no = models.CharField(max_length=100)
     a = models.FloatField()
+    a1 = models.IntegerField(null=True, default=0)
     b = models.FloatField()
+    b1 = models.IntegerField(null=True, default=0)
     e = models.FloatField()
     d = models.FloatField()
     o1 = models.FloatField()
@@ -300,3 +302,32 @@ class BackupSettings(models.Model):
 
     def __str__(self):
         return str(self.backup_date)
+    
+
+
+class master_report(models.Model):
+    part_model = models.CharField(max_length=100)
+    parameter_name = models.CharField(max_length=100)
+    operator = models.CharField(max_length=100)
+    formatted_from_date = models.CharField(max_length=100)
+    formatted_to_date = models.CharField(max_length=100)
+    machine = models.CharField(max_length=100)
+    vendor_code = models.CharField(max_length=100)
+    job_no = models.CharField(max_length=100)
+    shift = models.CharField(max_length=100)
+    current_date_time = models.CharField(max_length=100)    
+
+
+
+class ParameterFactor(models.Model):
+    part_model = models.CharField(max_length=255)
+    parameter_name = models.CharField(max_length=255)
+    method = models.CharField(max_length=10, choices=[('+', '+'), ('-', '-')])  # Choose between '+' or '-'
+    value = models.CharField(max_length=255)
+
+    # Add a unique constraint to part_model and parameter_name to ensure there is only one per combination
+    class Meta:
+        unique_together = ('part_model', 'parameter_name')  # Ensures unique (part_model, parameter_name) combination
+
+    def __str__(self):
+        return f"{self.part_model} - {self.parameter_name}"

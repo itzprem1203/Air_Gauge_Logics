@@ -1,9 +1,9 @@
 from django.conf import settings
-from django.urls import path,include
+from django.urls import path
 from django.conf.urls.static import static
 from .views import home,index,comport,probe,trace,parameter,master,measurebox,measurement
 from .views import utility,report,spc,srno,withoutsrno,paraReport,jobReport,xBar,xBarRchart,backup,xBarSchart
-from .views import histogram,pieChart
+from .views import histogram,pieChart,measure,masterReport
 urlpatterns = [
     path('',home,name="home"),
     path('index/',index,name="index"),
@@ -26,7 +26,9 @@ urlpatterns = [
     path('xBarSchart/',xBarSchart,name="xBarSchart"),
     path('histogram/',histogram,name="histogram"),
     path('pieChart/',pieChart,name="pieChart"),
-    path('backup/',backup,name="backup"),    
+    path('backup/',backup,name="backup"),
+    path('measure/',measure,name="measure"),
+    path('masterReport/',masterReport,name="masterReport"),    
 
     ]
 
