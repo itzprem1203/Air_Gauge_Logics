@@ -61,6 +61,9 @@ class SerialConsumer(AsyncWebsocketConsumer):
     def serial_read_thread(self):
         try:
             accumulated_data = ""
+            com_data = {}  # Dictionary to store latest received data for each COM port
+            previous_data = {}  # Store previous data to check for updates
+
             while True:
                 if self.ser and self.ser.is_open and self.ser.in_waiting > 0:
                     received_data = self.ser.read(self.ser.in_waiting).decode('ASCII')
@@ -76,31 +79,32 @@ class SerialConsumer(AsyncWebsocketConsumer):
                                 # Validate LVDT 4CH or PIEZO 4CH
                                 if hasattr(self, 'card') and self.card in ["LVDT_4CH", "PIEZO_4CH"]:
                                     extracted_values = self.extract_values(message.strip())
-                                    
+
                                     if len(extracted_values) > 4:
-                                        print(f"❌ Invalid data length ({len(extracted_values)}) received for {self.card}. Ignored!")
+                                        print(f"❌ Invalid data length ({len(extracted_values)}) received for {self.card}. Ignored!", end="\r")
+                                        continue  # Ignore invalid data (less or more than 4 values)
+
+                                    # Process only the new or updated data
+                                    if com_port not in previous_data or previous_data[com_port] != message.strip():
+                                        previous_data[com_port] = message.strip()
+
+                                        # Store the updated data for each COM port
+                                        com_data[com_port] = message.strip()
+
+                                        # Print only the updated data for the specific COM port
+                                        output = " | ".join([f"{port}: {data}" for port, data in com_data.items()])
+                                        print(f"\r{output}", end="", flush=True)
+
+                                        # Send valid message to WebSocket
                                         async_to_sync(self.channel_layer.group_send)(
                                             self.group_name,
                                             {
                                                 'type': 'serial_message',
-                                                'message': f"Invalid data length ({len(extracted_values)}) received for {self.card}. Ignored!",
+                                                'message': message.strip(),
                                                 'com_port': com_port,
-                                                'length': len(extracted_values)
+                                                'length': length
                                             }
                                         )
-                                        continue  # Ignore invalid data
-
-                                # Send valid message to WebSocket
-                                print(f"✅ Received valid data from {com_port}: {message.strip()} (Length: {length})")
-                                async_to_sync(self.channel_layer.group_send)(
-                                    self.group_name,
-                                    {
-                                        'type': 'serial_message',
-                                        'message': message.strip(),
-                                        'com_port': com_port,
-                                        'length': length
-                                    }
-                                )
                         accumulated_data = ""  # Reset buffer after processing
 
         except Exception as e:

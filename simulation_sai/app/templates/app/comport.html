@@ -5,18 +5,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
-<style>
-    #error-message {
-    color: #721c24;
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    display: none; /* Initially hidden */
-}
-</style>
-
 <body style="background-color:#1a7d9e;">
     <div id="notification" style="display: none; background-color: yellow; color: black; padding: 10px; border-radius: 5px; position: fixed; top: 20px; margin-left: 500px;">
     </div>
@@ -26,8 +14,7 @@
     </center>
     </div>
     <div id="status-message" style="color: red; font-weight: bold; margin-top: 10px;"></div>
-    <!-- Add this somewhere in your HTML layout -->
-    <div id="error-message" class="mb-3"></div>
+
 
     <form id="comport-form">
         {% csrf_token %}
@@ -222,16 +209,9 @@ document.getElementById('start-button').addEventListener('click', function() {
     });
     $(document).ready(function () {
     const ws = new WebSocket('ws://localhost:8000/ws/comport/');
-    const errorDiv = $('#error-message'); // Add this div in your HTML
 
     ws.onmessage = function(event) {
         const data = JSON.parse(event.data);
-        errorDiv.text(''); // Clear previous errors
-
-        if (data.error) {
-            errorDiv.text(data.error).addClass('alert alert-danger');
-            return;
-        }
 
         if (data.message) {
             let comPort = data.com_port;  // Get COM port number
