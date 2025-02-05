@@ -147,11 +147,17 @@ def srno(request):
 
             readings_html = ''
             for data in comp_sr_no_data:
-                parameter_name = data['parameter_name']
-                utl = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model).utl
-                ltl = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model).ltl
-                key = f"{parameter_name} <br>{utl} <br>{ltl}"
-                formatted_date = data['date'].strftime('%d-%m-%Y %I:%M:%S %p')
+                parameter_name = data.get('parameter_name')
+                try:
+                    parameter_setting = parameter_settings.objects.get(parameter_name=parameter_name, model_id=part_model)
+                    utl = parameter_setting.utl
+                    ltl = parameter_setting.ltl
+                    key = f"{parameter_name} <br>{utl} <br>{ltl}"
+                    formatted_date = data['date'].strftime('%d-%m-%Y %I:%M:%S %p')
+                    # Process further as needed
+                except parameter_settings.DoesNotExist:
+                    print(f"No parameter_settings found for parameter_name={parameter_name} and model_id={part_model}")
+                    continue
                  # Check the status and set the value accordingly
                 if data['readings'] is None or data['readings'] == '':
                     if data['status_cell'] == 'ACCEPT':

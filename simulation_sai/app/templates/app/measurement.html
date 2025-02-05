@@ -2286,17 +2286,38 @@ function mapProbeToTextareaId(probeNumber) {
 /////////////////////////////////////////////////////////////////////////////////
 
 
-$(document).ready(function () { 
+$(document).ready(function () {
+    // Parse the settings JSON into a JavaScript object
+    const settings = JSON.parse('{{ settings_json|safe }}');
+
+    // Log settings to the console
+    console.log("Settings:", settings);
+
+    // Create a dynamic priority array based on the card names
+    const portPriority = settings
+        .sort((a, b) => {
+            // Sorting the ports so that PIEZO_4CH comes before LVDT_4CH
+            if (a.card === 'PIEZO_4CH') return -1;
+            if (b.card === 'PIEZO_4CH') return 1;
+            return 0;
+        })
+        .map(setting => setting.com_port); // Get the sorted COM ports based on card priority
+
+    console.log("Sorted COM Port Priority:", portPriority);
+
     const ws = new WebSocket('ws://localhost:8000/ws/comport/');
 
     let mergedChannels = {}; // Store channel data from all COM ports
 
-    ws.onmessage = function(event) {
+    ws.onmessage = function (event) {
         const data = JSON.parse(event.data);
 
         if (data.message) {
-            let comPort = data.com_port;  // Get COM port dynamically
+            let comPort = data.com_port; // Get COM port dynamically
+            console.log("comPort:", comPort);
+
             let message = data.message;
+            console.log("Message:", message);
 
             // Extract channels (A-K with + or - followed by a number)
             let matches = message.match(/[A-K][\+\-]\d+/g) || [];
@@ -2307,8 +2328,17 @@ $(document).ready(function () {
             }
             mergedChannels[comPort] = matches; // Update channel data for this COM
 
-            // Merge all COMs into a single list
-            let allChannels = Object.values(mergedChannels).flat();
+            // Merge all channels based on the priority order
+            let allChannels = [];
+            portPriority.forEach(priorityComPort => {
+                if (mergedChannels[priorityComPort] && mergedChannels[priorityComPort].length > 0) {
+                    allChannels = allChannels.concat(mergedChannels[priorityComPort]);
+                } else {
+                    // If the COM port is disconnected or has no data, fill with "0"
+                    let emptyChannels = Array(4).fill().map((_, i) => `${i + 1}0000000`);
+                    allChannels = allChannels.concat(emptyChannels);
+                }
+            });
 
             console.log(`Merged COM Data: ${allChannels.join(", ")}`);
 
@@ -2318,13 +2348,20 @@ $(document).ready(function () {
             // Get available textareas dynamically (equal to merged channel length)
             let availableTextareas = $("textarea[id^='probe-']").toArray().slice(0, allChannels.length);
 
-            // Assign only required values
+            // Process allChannels and display in textareas
             allChannels.forEach((channelData, index) => {
                 if (index < availableTextareas.length) {
-                    let value = channelData.substring(2);  // Extract numeric value
-                    let textarea = availableTextareas[index]; // Assign to next available textarea
-                    
-                    $(textarea).val(value); // Update textarea
+                    // Check if the value is negative or positive
+                    let value;
+                    if (channelData.includes('-')) {
+                        value = channelData.substring(1); // Include the negative sign with the value
+                    } else {
+                        value = channelData.substring(2); // Ignore '+' and get only the value
+                    }
+
+                    // Assign to the corresponding textarea
+                    let textarea = availableTextareas[index];
+                    $(textarea).val(value);
                 }
             });
         }

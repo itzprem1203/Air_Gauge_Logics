@@ -129,10 +129,16 @@ def withoutsrno(request):
             temp_dict = {key: '' for key in data_dict.keys() if key not in ['Date', 'Operator', 'Shift', 'Status']}
 
             for record in records:
-                param_name = record['parameter_name']
-                utl = parameter_settings.objects.get(parameter_name=param_name, model_id=part_model).utl
-                ltl = parameter_settings.objects.get(parameter_name=param_name, model_id=part_model).ltl
-                key = f"{param_name} <br>{utl} <br>{ltl}"
+                param_name = record.get('parameter_name')
+                try:
+                    parameter_setting = parameter_settings.objects.get(parameter_name=param_name, model_id=part_model)
+                    utl = parameter_setting.utl
+                    ltl = parameter_setting.ltl
+                    key = f"{param_name} <br>{utl} <br>{ltl}"
+                    # Process further as needed
+                except parameter_settings.DoesNotExist:
+                    print(f"No parameter_settings found for parameter_name={param_name} and model_id={part_model}")
+                    continue
 
                 if record['readings'] is None or record['readings'] == '':
                     if record['status_cell'] == 'ACCEPT':

@@ -8,7 +8,7 @@ import pytz
 from django.utils import timezone  
 from django.db.models import Q
 
-from app.models import MasterIntervalSettings, MeasurementData, ParameterFactor, ResetCount, ShiftSettings, TableOneData, Master_settings, measure_data, parameter_settings
+from app.models import MasterIntervalSettings,comport_settings, MeasurementData, ParameterFactor, ResetCount, ShiftSettings, TableOneData, Master_settings, measure_data, parameter_settings
 
 
 def process_row(row):
@@ -189,6 +189,10 @@ def measurement(request):
             print("No part model found.")
         except measure_data.MultipleObjectsReturned:
             print("Multiple part models found.")
+
+        settings_list = list(comport_settings.objects.values(
+            'card', 'com_port', 'baud_rate', 'bytesize', 'stopbits', 'parity'
+        ))    
 
         if part_model:
             # Filter Master_settings for the specific part_model
@@ -405,7 +409,8 @@ def measurement(request):
             'overall_accept_count': overall_status_counts['ACCEPT'],
             'overall_reject_count': overall_status_counts['REJECT'],
             'overall_rework_count': overall_status_counts['REWORK'],
-            'shift_values_json': shift_values_json
+            'shift_values_json': shift_values_json,
+            'settings_json': json.dumps(settings_list),
         }
        
         return render(request, 'app/measurement.html', context)

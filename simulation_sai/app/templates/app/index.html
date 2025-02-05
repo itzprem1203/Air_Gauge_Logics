@@ -246,6 +246,15 @@ function startSerialCommunication() {
                     stopbit: stopbits[index] || stopbits[0],
                     databit: databits[index] || databits[0]
                 }));
+
+                console.log("Sending WebSocket data:", {
+                    command: 'start_communication',
+                    com_ports: [dbPort],
+                    baud_rate: baudRates[index] || baudRates[0],
+                    parity: parities[index] || parities[0],
+                    stopbit: stopbits[index] || stopbits[0],
+                    databit: databits[index] || databits[0]
+                });
             }
         });
 

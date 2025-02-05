@@ -160,11 +160,11 @@ updateClock();
 
 
 function sendDataToBackend(confirmValue, backupDate, id_value) {
-    console.log('Sending Data:', {
-        confirm: confirmValue,
-        backup_date: backupDate,
-        idValue: id_value,
-    });
+    // console.log('Sending Data:', {
+    //     confirm: confirmValue,
+    //     backup_date: backupDate,
+    //     idValue: id_value,
+    // });
     
     fetch('/backup/', {
         method: 'POST',

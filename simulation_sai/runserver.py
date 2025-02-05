@@ -1,125 +1,185 @@
-import os
-import subprocess
-import time
-from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QPushButton, QVBoxLayout, QWidget, QMessageBox
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtCore import QUrl, Qt
-from PyQt5.QtGui import QScreen
-from threading import Thread
+import asyncio
+import serial
+import json
+import threading
+from asgiref.sync import async_to_sync
+from channels.generic.websocket import AsyncWebsocketConsumer
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.server_process = None  # To keep track of the Django server process
-        self.init_ui()
+class SerialConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.serial_threads = {}  # Store threads for each COM port
+        self.serial_connections = {}  # Store serial connection objects
 
-    def init_ui(self):
-        # Create a dropdown box
-        self.dropdown = QComboBox(self)
-        self.python_executables = find_python_executables()
-        self.dropdown.addItems(self.python_executables)
+    async def connect(self):
+        self.group_name = 'serial_group'
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        print("WebSocket Connection Established.")
 
-        # Create an OK button
-        self.ok_button = QPushButton('OK', self)
-        self.ok_button.clicked.connect(self.on_ok_clicked)
+    async def disconnect(self, close_code):
+        # Stop all threads and close serial ports on disconnect
+        for com_port, ser in self.serial_connections.items():
+            if ser and ser.is_open:
+                ser.close()
+        self.serial_threads.clear()
+        self.serial_connections.clear()
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        print("WebSocket Connection Closed.")
 
-        # Set up the layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.dropdown)
-        layout.addWidget(self.ok_button)
+    async def receive(self, text_data):
+        try:
+            print(f"Received raw data: {text_data}")  # Log the raw WebSocket data
+            data = json.loads(text_data)
+            command = data.get('command')
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-        self.setWindowTitle("Select Python Executable")
+            # Access 'com_port' instead of 'com_ports'
+            com_ports = data.get("com_port")
+            print(f"Received com_ports: {com_ports}")
 
-        # Get the size of the screen and set the window size
-        screen = QScreen.availableGeometry(QApplication.primaryScreen())
-        self.setGeometry(screen)  # Set window size to the full screen size
+            if com_ports is None:
+                print("No COM ports found in the data!")
+            else:
+                # Process the com_ports (assuming it's a list)
+                print(f"COM Ports to process: {com_ports}")
 
-    def on_ok_clicked(self):
-        selected_python = self.dropdown.currentText()
-        if not selected_python:
-            QMessageBox.warning(self, "No Selection", "No Python executable selected.")
+            if command in ['start_serial', 'start_communication']:
+                await self.start_serial_communication(data)
+        except Exception as e:
+            print(f"Error processing received data: {e}")
+
+
+    async def start_serial_communication(self, data):
+        """
+        Starts serial communication on multiple COM ports in separate threads.
+        """
+        
+        self.card = data.get("card")  # Store card type for validation
+        com_ports = data.get('com_port')  # Expecting a list of COM ports
+        baud_rate = data.get('baud_rate')
+        parity = data.get('parity')
+        stopbit = data.get('stopbit')
+        databit = data.get('databit')
+
+        # If com_ports is not a list, convert it into one
+        if isinstance(com_ports, str):
+            com_ports = [com_ports]  # Convert string to list if it's a single port
+        elif com_ports is None:
+            print("Error: 'com_ports' cannot be None.")
             return
 
-        # Disable the dropdown and button
-        self.dropdown.setEnabled(False)
-        self.ok_button.setEnabled(False)
+        # Now check if com_ports is a list (this is no longer necessary if it's already converted)
+        if not isinstance(com_ports, list) or not com_ports:
+            print("Error: 'com_ports' must be a list of COM port names.")
+            return
 
-        # Start Django server in a separate thread
-        self.server_thread = Thread(target=self.run_django_server, args=(selected_python,))
-        self.server_thread.daemon = True
-        self.server_thread.start()
+        # Now com_ports is guaranteed to be a list, so we proceed
+        print(f"COM Ports to process: {com_ports}")
 
-        # Wait for the server to start
-        time.sleep(5)  # Adjust this if needed
+        # Start separate thread for each COM port
+        for com_port in com_ports:
+            if com_port not in self.serial_threads:  # Avoid duplicate threads
+                self.serial_threads[com_port] = threading.Thread(
+                    target=self.serial_read_thread,
+                    args=(com_port, baud_rate, parity, stopbit, databit),
+                    daemon=True
+                )
+                self.serial_threads[com_port].start()
+                print(f"✅ Serial thread started for {com_port}")
 
-        # Start the web view
-        self.create_web_view()
 
-    def run_django_server(self, python_executable):
-        # Change working directory to the project folder
-        project_dir = r'C:\Program Files\gauge_logic'
-        os.chdir(project_dir)
+    def configure_serial_port(self, com_port, baud_rate, parity, stopbits, bytesize):
+        """
+        Configures and returns a serial port connection.
+        """
+        try:
+            if not all([com_port, baud_rate, parity, stopbits, bytesize]):
+                print(f"⚠️ Missing parameters for {com_port}.")
+                return None
 
-        # Path for virtual environment within project_dir
-        venv_path = os.path.join(project_dir, 'myenv')
-        
-        # Create virtual environment if it doesn't exist
-        if not os.path.exists(venv_path):
-            subprocess.run([python_executable, '-m', 'venv', venv_path], shell=True)
+            ser = serial.Serial(
+                port=com_port,
+                baudrate=int(baud_rate),
+                bytesize=int(bytesize),
+                stopbits=float(stopbits),
+                parity=parity[0].upper(),
+                timeout=5  # Prevents excessive CPU usage
+            )
+            self.serial_connections[com_port] = ser  # Store connection
+            print(f"✅ Connected to {com_port}.")
+            return ser
+        except (ValueError, serial.SerialException) as e:
+            print(f"❌ Error opening {com_port}: {e}")
+            return None
 
-        # Activate the virtual environment
-        venv_python = os.path.join(venv_path, 'Scripts', 'python.exe')
+    def serial_read_thread(self, com_port, baud_rate, parity, stopbit, databit):
+        """
+        Reads data from each COM port in a separate thread.
+        """
+        try:
+            ser = self.configure_serial_port(com_port, baud_rate, parity, stopbit, databit)
+            if not ser:
+                return
 
-        # Install requirements in the virtual environment
-        requirements_path = os.path.join(project_dir, 'requirements.txt')
-        if os.path.exists(requirements_path):
-            subprocess.run([venv_python, '-m', 'pip', 'install', '-r', requirements_path])
+            accumulated_data = ""
+            previous_data = ""  # Store last message to check for updates
 
-        # Run Django server using the virtual environment's Python
-        self.server_process = subprocess.Popen([venv_python, 'manage.py', 'runserver'])
+            while ser and ser.is_open:
+                print(f"📡 Listening on {com_port}...")  # Debugging
 
-    def create_web_view(self):
-        """Create and display the web view to show the Django server output."""
-        # Create a web view widget
-        self.web_view = QWebEngineView(self)
-        
-        # Set the URL using QUrl
-        self.web_view.setUrl(QUrl("http://127.0.0.1:8000/"))
+                received_data = ser.read_until(expected=b'\r').decode('ASCII').strip()
+                if received_data:
+                    accumulated_data += received_data
 
-        # Set up the layout
-        layout = QVBoxLayout()
-        layout.addWidget(self.web_view)
+                    if '\r' in accumulated_data:
+                        messages = accumulated_data.split('\r')
+                        for message in messages:
+                            if message.strip():
+                                # Validate LVDT_4CH or PIEZO_4CH
+                                if hasattr(self, 'card') and self.card in ["LVDT_4CH", "PIEZO_4CH"]:
+                                    extracted_values = self.extract_values(message.strip())
 
-        # Update the container with the new layout
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+                                    if len(extracted_values) > 4:
+                                        print(f"⚠️ Invalid data ({len(extracted_values)} values) for {self.card}. Ignored!")
+                                        continue  # Ignore invalid data
 
-        # Update window title
-        self.setWindowTitle("Django Server Output")
+                                    # Send new or updated data
+                                    if message.strip() != previous_data:
+                                        previous_data = message.strip()
+                                        print(f"📨 {com_port} Data: {message.strip()}")
 
-    def closeEvent(self, event):
-        """Override the close event to terminate the server process."""
-        if self.server_process:
-            self.server_process.terminate()  # Terminate the server process
-            self.server_process.wait()  # Wait for the process to terminate
-        event.accept()
+                                        # Send valid message to WebSocket
+                                        async_to_sync(self.channel_layer.group_send)(self.group_name, {
+                                            'type': 'serial_message',
+                                            'message': message.strip(),
+                                            'com_port': com_port
+                                        })
 
-def find_python_executables():
-    """Find Python executables in user directories."""
-    possible_paths = [
-        os.path.expanduser(r'~\AppData\Local\Programs\Python\Python312\python.exe'),
-        os.path.expanduser(r'~\AppData\Local\Programs\Python\Python310\python.exe'),
-        os.path.expanduser(r'~\AppData\Local\Programs\Python\Python39\python.exe'),
-        # Add more possible paths if needed
-    ]
-    return [path for path in possible_paths if os.path.exists(path)]
+                        accumulated_data = ""  # Reset buffer
 
-if __name__ == "__main__":
-    app = QApplication([])
-    window = MainWindow()
-    window.showMaximized()  # Show the window maximized with window controls
-    app.exec_()
+        except Exception as e:
+            print(f"❌ Error in serial read thread ({com_port}): {str(e)}")
+        finally:
+            if ser and ser.is_open:
+                ser.close()
+
+    def extract_values(self, message):
+        """
+        Extracts values from serial message in format A+260000B+564765C+456345D+675678
+        """
+        import re
+        pattern = r'[A-Za-z][^A-Za-z0-9\s]\d+'
+        matches = re.findall(pattern, message)
+        return matches
+
+    async def serial_message(self, event):
+        """
+        Sends serial data to WebSocket clients.
+        """
+        await self.send(text_data=json.dumps({
+            'com_port': event['com_port'],
+            'message': event['message']
+        }))
+
+
+

@@ -2,6 +2,8 @@ import json
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
+from app.models import comport_settings
+
 
 def probe(request):
     from app.models import probe_calibrations
@@ -51,6 +53,10 @@ def probe(request):
         # Retrieve the distinct probe IDs
         probe_ids = probe_calibrations.objects.values_list('probe_id', flat=True).distinct().order_by('probe_id')
 
+        settings_list = list(comport_settings.objects.values(
+            'card', 'com_port', 'baud_rate', 'bytesize', 'stopbits', 'parity'
+        ))
+
         # Create dictionaries to store coefficient and low count values for each probe ID
         probe_coefficients = {}
         low_count = {}
@@ -73,5 +79,10 @@ def probe(request):
 
         print('your probecoefficent values for probes:',probe_coefficients_json)
         print('your lowcount values for probes:',low_count_json)
+        context = {
+            'probe_coefficients_json': probe_coefficients_json ,
+            'low_count_json':low_count_json ,
+             'settings_json': json.dumps(settings_list),
+        }
 
-    return render(request, 'app/probe.html', {'probe_coefficients_json': probe_coefficients_json ,'low_count_json':low_count_json })
+    return render(request, 'app/probe.html',context)

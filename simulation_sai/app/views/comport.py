@@ -71,6 +71,12 @@ def comport(request):
         if card not in allowed_cards:
             return JsonResponse({"error": "Invalid card name."}, status=400)
 
+
+        existing_comport = comport_settings.objects.filter(com_port=com_port).exclude(card=card)
+        if existing_comport.exists():
+            deleted_count, _ = existing_comport.delete()
+            print(f"Deleted {deleted_count} records with com_port: {com_port}")    
+
         # Try fetching an existing record first
         comport_instance = comport_settings.objects.filter(card=card).first()
 

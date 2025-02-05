@@ -79,11 +79,43 @@
                 <button type="button" id="cancel-button" style="background-color: red; color: white;margin-top: 10px;height: 30px; width: 200px;"><b>BACK</b></button>
             </a>
             <button type="button" id="start-button" style="background-color: green; color: white;margin-top: 10px;height: 30px; width: 200px;"><b>OK</b></button>
-            
+            <!-- <button id="delete">DELETE</button> -->
         </div>
     </form>
 
     <script>
+
+// document.getElementById('delete').addEventListener('click', function () {
+//     // Confirm deletion before proceeding
+//     if (confirm('Are you sure you want to delete all COM port settings?')) {
+//         // Send a DELETE request to the comport view
+//         fetch('/comport/', {
+//             method: 'DELETE',
+//             headers: {
+//                 'X-CSRFToken': '{{ csrf_token }}',  // Include CSRF token for Django
+//                 'Content-Type': 'application/json'
+//             },
+//         })
+//         .then(response => {
+//             if (response.ok) {
+//                 return response.json();
+//             } else {
+//                 throw new Error('Failed to delete the records.');
+//             }
+//         })
+//         .then(data => {
+//             // Display a success message or handle the response
+//             alert(data.message);
+//             console.log(data.message);
+//         })
+//         .catch(error => {
+//             // Handle errors
+//             alert('An error occurred: ' + error.message);
+//             console.error('Error:', error);
+//         });
+//     }
+// });
+
 
 $(document).ready(function() {
     function fetchComportData(selectedCard) {

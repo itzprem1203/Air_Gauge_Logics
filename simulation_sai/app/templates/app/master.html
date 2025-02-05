@@ -229,16 +229,13 @@ Mastering Page
  </style>
  
 
-<div class="full-page-box" style="overflow-x: auto;overflow-y:auto;">
+ <div class="full-page-box">
     <div id="clock">
         <div class="box" id="clock-box"></div>
-        <a href="{% url 'measurebox' %}" >
+        <a href="{% url 'measurebox' %}">
             <button type="button" id="back-btn"><b>Back</b></button>
-            </a>
-        
+        </a>
     </div>
-    
-   
 
     <div class="left-box">
         <label for="partModel">PART MODEL:</label>
@@ -247,40 +244,37 @@ Mastering Page
                 <option value="{{ value }}">{{ value }}</option>
             {% endfor %}
         </select>
-        <a href="{% url 'measurebox' %}" >
+        <a href="{% url 'measurebox' %}">
             <button type="button" id="cancel-btn"><b>Cancel</b></button>
-            </a>
+        </a>
         <button type="button" id="select-btn"><b>Select</b></button>
     </div>
+
     <label for="all_parameter" style="margin-left: 370px; margin-top: -80px;">
         All Parameter
         <input type="radio" name="radio_selection" style="margin-left: 10px;" id="all_parameter" onclick="handleRadioClick(this)">
     </label>
-    
+
     <label for="parameterwise" style="margin-left: 370px;">
         Parameterwise
         <input type="radio" name="radio_selection" style="margin-left: 7px;" id="parameterwise" onclick="handleRadioClick(this)">
     </label><br>
-    
-    <label for="mastering" style="margin-left: 500px;margin-top: -80px;">MASTERING GROUP:</label>
-    <select id="mastering" style="width: 7%;margin-left: 650px;margin-top: -40px;" name="mastering" onchange="updateMastering()">
+
+    <label for="mastering" style="margin-left: 500px; margin-top: -80px;">MASTERING GROUP:</label>
+    <select id="mastering" style="width: 7%; margin-left: 650px; margin-top: -40px;" name="mastering" onchange="updateMastering()">
         <script>
             for (var i = 1; i <= 30; i++) {
                 document.write('<option value="' + i + '">' + i + '</option>');
             }
         </script>
     </select>
-    
+
     <button id="measureBtn" type="button" onclick="MeasureBtnClick()"><b>Measurement<br>F1</b></button>
     <button id="lowMasterBtn" type="button" onclick="lowMasteringClick()"><b>Low Mastering</b></button>
     <button id="highMasterBtn" type="button" onclick="highMasteringClick()"><b>High Mastering</b></button>
-    
-
-
 
     <pre id="pre" style="border: 2px solid black;"></pre>
-    
-  
+
     <div>
         <h5>RAW COUNT:</h5>
         <div class="probe-container">
@@ -297,13 +291,16 @@ Mastering Page
             <p>P11:</p><textarea id="probe-K"></textarea>
         </div>
     </div>
-    
-    
-    <div id="wrapper" class="wrapper"></div>
+
+    <!-- Ensure wrapper has overflow-y applied -->
+    <div class="second_box" >
+        <div id="wrapper" class="wrapper" style="overflow-y: auto; max-height: 50vh;">
+            <!-- Content inside wrapper -->
+        </div>
+    </div>
+
     <div id="container-wrapper"></div>
-    <div id="customAlert" ></div>
-
-
+    <div id="customAlert"></div>
 </div>
 
 
@@ -481,14 +478,22 @@ function lowMasteringClick(response) {
 
 
                             // Store the interval IDs for low mastering
+                            var selectedMastering = parseInt(document.getElementById('mastering').value); // Get the selected mastering group
+
+                            // Store the interval IDs for low mastering
                             var containers = document.querySelectorAll('.input-box-container');
                             containers.forEach(function(container) {
-                                var aValue = parseFloat(container.dataset.a); // Retrieve stored `a` value
-                                var inputBox2 = container.querySelector('.input2-box');
-                                if (inputBox2) {
-                                    inputBox2.value = aValue; // Update input2-box with `a` value
-                                    inputBox2.style.backgroundColor = '#00ff00'; // Optional: Highlight updated box
-                                }
+                                var containerMastering = parseInt(container.dataset.mastering); // Get mastering group from container's dataset
+
+                                // Check if this container belongs to the selected mastering group
+                                if (containerMastering === selectedMastering) {
+                                    var aValue = parseFloat(container.dataset.a); // Retrieve stored `a` value
+                                    var inputBox2 = container.querySelector('.input2-box');
+                                    
+                                    if (inputBox2) {
+                                        inputBox2.value = aValue; // Update input2-box with `a` value
+                                        inputBox2.style.backgroundColor = '#00ff00'; // Optional: Highlight updated box
+                                    }
 
                                 // Clear previous intervals related to input2-box
                                 var intervalId = containerIntervals[container.id];
@@ -505,6 +510,7 @@ function lowMasteringClick(response) {
                                     }, 2000); // Wait 5 seconds
                                  // Example interval for demonstration
                                 lowMasteringIntervalIds.push(intervalId);
+                                }
                             });
                         },
                         error: function(xhr, status, error) {
@@ -834,15 +840,6 @@ function processContainers(type, response) {
 
 
 
-
-
-
-
-
-
-
-
-
 var containerIntervals = {}; // Object to store intervals for each container by ID
 
 // Function to start open reading
@@ -976,33 +973,6 @@ function updateMastering(selectedRadioButtonId) {
     }
     updatePreText();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 function onRadioButtonChange(event) {
@@ -1201,17 +1171,38 @@ function mapProbeToTextareaId(probeNumber) {
 
     
 
-$(document).ready(function () { 
+$(document).ready(function () {
+    // Parse the settings JSON into a JavaScript object
+    const settings = JSON.parse('{{ settings_json|safe }}');
+
+    // Log settings to the console
+    console.log("Settings:", settings);
+
+    // Create a dynamic priority array based on the card names
+    const portPriority = settings
+        .sort((a, b) => {
+            // Sorting the ports so that PIEZO_4CH comes before LVDT_4CH
+            if (a.card === 'PIEZO_4CH') return -1;
+            if (b.card === 'PIEZO_4CH') return 1;
+            return 0;
+        })
+        .map(setting => setting.com_port); // Get the sorted COM ports based on card priority
+
+    console.log("Sorted COM Port Priority:", portPriority);
+
     const ws = new WebSocket('ws://localhost:8000/ws/comport/');
 
     let mergedChannels = {}; // Store channel data from all COM ports
 
-    ws.onmessage = function(event) {
+    ws.onmessage = function (event) {
         const data = JSON.parse(event.data);
 
         if (data.message) {
-            let comPort = data.com_port;  // Get COM port dynamically
+            let comPort = data.com_port; // Get COM port dynamically
+            console.log("comPort:", comPort);
+
             let message = data.message;
+            console.log("Message:", message);
 
             // Extract channels (A-K with + or - followed by a number)
             let matches = message.match(/[A-K][\+\-]\d+/g) || [];
@@ -1222,8 +1213,17 @@ $(document).ready(function () {
             }
             mergedChannels[comPort] = matches; // Update channel data for this COM
 
-            // Merge all COMs into a single list
-            let allChannels = Object.values(mergedChannels).flat();
+            // Merge all channels based on the priority order
+            let allChannels = [];
+            portPriority.forEach(priorityComPort => {
+                if (mergedChannels[priorityComPort] && mergedChannels[priorityComPort].length > 0) {
+                    allChannels = allChannels.concat(mergedChannels[priorityComPort]);
+                } else {
+                    // If the COM port is disconnected or has no data, fill with "0"
+                    let emptyChannels = Array(4).fill().map((_, i) => `${i + 1}0000000`);
+                    allChannels = allChannels.concat(emptyChannels);
+                }
+            });
 
             console.log(`Merged COM Data: ${allChannels.join(", ")}`);
 
@@ -1233,13 +1233,20 @@ $(document).ready(function () {
             // Get available textareas dynamically (equal to merged channel length)
             let availableTextareas = $("textarea[id^='probe-']").toArray().slice(0, allChannels.length);
 
-            // Assign only required values
+            // Process allChannels and display in textareas
             allChannels.forEach((channelData, index) => {
                 if (index < availableTextareas.length) {
-                    let value = channelData.substring(2);  // Extract numeric value
-                    let textarea = availableTextareas[index]; // Assign to next available textarea
-                    
-                    $(textarea).val(value); // Update textarea
+                    // Check if the value is negative or positive
+                    let value;
+                    if (channelData.includes('-')) {
+                        value = channelData.substring(1); // Include the negative sign with the value
+                    } else {
+                        value = channelData.substring(2); // Ignore '+' and get only the value
+                    }
+
+                    // Assign to the corresponding textarea
+                    let textarea = availableTextareas[index];
+                    $(textarea).val(value);
                 }
             });
         }

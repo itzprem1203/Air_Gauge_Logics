@@ -110,7 +110,7 @@ WSGI_APPLICATION = 'project_me.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'sai',
+        'NAME': 'Multi_Gauge',
         'USER': 'postgres',
         'PASSWORD': 'sai@123',
         'HOST': 'localhost',

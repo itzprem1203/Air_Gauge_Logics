@@ -20,6 +20,7 @@ def index(request):
         comport_stopbit = list(comport_settings.objects.values_list('stopbits', flat=True))
         comport_databit = list(comport_settings.objects.values_list('bytesize', flat=True))
         comport_card = list(comport_settings.objects.values_list('card', flat=True))
+
         print(';your card is this:',comport_card)
 
         print('your baud_rate is this:', comport_baud_rate)

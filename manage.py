@@ -2,146 +2,156 @@ import asyncio
 import serial
 import json
 import threading
-import re
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 class SerialConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.serial_threads = {}  # Store threads for each COM port
+        self.serial_connections = {}  # Store serial connection objects
+
     async def connect(self):
         self.group_name = 'serial_group'
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        self.ser = None
-        self.serial_thread = None
-        self.card = None
+        print("WebSocket Connection Established.")
 
     async def disconnect(self, close_code):
-        if self.ser and self.ser.is_open:
-            self.ser.close()
+        # Stop all threads and close serial ports on disconnect
+        for com_port, ser in self.serial_connections.items():
+            if ser and ser.is_open:
+                ser.close()
+        self.serial_threads.clear()
+        self.serial_connections.clear()
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        print("WebSocket Connection Closed.")
 
     async def receive(self, text_data):
         try:
             data = json.loads(text_data)
-            if data.get('command') in ['start_serial', 'start_communication']:
+            command = data.get('command')
+
+            if command in ['start_serial', 'start_communication']:
                 await self.start_serial_communication(data)
-        except json.JSONDecodeError:
-            await self.send_error("Invalid JSON format")
+        except Exception as e:
+            print(f"Error processing received data: {e}")
 
     async def start_serial_communication(self, data):
-        self.card = data.get("card")
-        com_port = data.get('com_port')
+        """
+        Starts serial communication on multiple COM ports in separate threads.
+        """
+        self.card = data.get("card")  # Store card type for validation
+        com_ports = data.get('com_ports')  # Expecting a list of COM ports
         baud_rate = data.get('baud_rate')
         parity = data.get('parity')
         stopbit = data.get('stopbit')
         databit = data.get('databit')
 
-        success, error_msg = self.configure_serial_port(
-            com_port, baud_rate, parity, stopbit, databit
-        )
-        
-        if success:
-            try:
-                command_message = "MMMMMMMMMM"
-                self.ser.write(command_message.encode('ASCII'))
-                self.serial_thread = threading.Thread(target=self.serial_read_thread)
-                self.serial_thread.daemon = True
-                self.serial_thread.start()
-            except Exception as e:
-                await self.send_error(f"Initialization error: {str(e)}")
-        else:
-            await self.send_error(error_msg, com_port)
+        if not com_ports or not isinstance(com_ports, list):
+            print("Error: 'com_ports' must be a list of COM port names.")
+            return
+
+        # Start separate thread for each COM port
+        for com_port in com_ports:
+            if com_port not in self.serial_threads:  # Avoid duplicate threads
+                self.serial_threads[com_port] = threading.Thread(
+                    target=self.serial_read_thread,
+                    args=(com_port, baud_rate, parity, stopbit, databit),
+                    daemon=True
+                )
+                self.serial_threads[com_port].start()
+                print(f"✅ Serial thread started for {com_port}")
 
     def configure_serial_port(self, com_port, baud_rate, parity, stopbits, bytesize):
+        """
+        Configures and returns a serial port connection.
+        """
         try:
             if not all([com_port, baud_rate, parity, stopbits, bytesize]):
-                return False, "Missing parameters"
+                print(f"⚠️ Missing parameters for {com_port}.")
+                return None
 
-            self.ser = serial.Serial(
+            ser = serial.Serial(
                 port=com_port,
                 baudrate=int(baud_rate),
                 bytesize=int(bytesize),
-                timeout=None,
                 stopbits=float(stopbits),
-                parity=parity[0].upper()
+                parity=parity[0].upper(),
+                timeout=5  # Prevents excessive CPU usage
             )
-            return True, None
+            self.serial_connections[com_port] = ser  # Store connection
+            print(f"✅ Connected to {com_port}.")
+            return ser
         except (ValueError, serial.SerialException) as e:
-            return False, str(e)
-        except Exception as e:
-            return False, f"Unexpected error: {str(e)}"
+            print(f"❌ Error opening {com_port}: {e}")
+            return None
 
-    def serial_read_thread(self):
-        accumulated_data = ""
+    def serial_read_thread(self, com_port, baud_rate, parity, stopbit, databit):
+        """
+        Reads data from each COM port in a separate thread.
+        """
         try:
-            while True:
-                if self.ser and self.ser.is_open and self.ser.in_waiting > 0:
-                    received_data = self.ser.read(self.ser.in_waiting).decode('ASCII')
+            ser = self.configure_serial_port(com_port, baud_rate, parity, stopbit, databit)
+            if not ser:
+                return
+
+            accumulated_data = ""
+            previous_data = ""  # Store last message to check for updates
+
+            while ser and ser.is_open:
+                print(f"📡 Listening on {com_port}...")  # Debugging
+
+                received_data = ser.read_until(expected=b'\r').decode('ASCII').strip()
+                if received_data:
                     accumulated_data += received_data
 
                     if '\r' in accumulated_data:
                         messages = accumulated_data.split('\r')
                         for message in messages:
-                            message = message.strip()
-                            if message:
-                                self.process_message(message)
-                        accumulated_data = ""
+                            if message.strip():
+                                # Validate LVDT_4CH or PIEZO_4CH
+                                if hasattr(self, 'card') and self.card in ["LVDT_4CH", "PIEZO_4CH"]:
+                                    extracted_values = self.extract_values(message.strip())
+
+                                    if len(extracted_values) > 4:
+                                        print(f"⚠️ Invalid data ({len(extracted_values)} values) for {self.card}. Ignored!")
+                                        continue  # Ignore invalid data
+
+                                    # Send new or updated data
+                                    if message.strip() != previous_data:
+                                        previous_data = message.strip()
+                                        print(f"📨 {com_port} Data: {message.strip()}")
+
+                                        # Send valid message to WebSocket
+                                        async_to_sync(self.channel_layer.group_send)(self.group_name, {
+                                            'type': 'serial_message',
+                                            'message': message.strip(),
+                                            'com_port': com_port
+                                        })
+
+                        accumulated_data = ""  # Reset buffer
+
         except Exception as e:
-            error_msg = f"Read error: {str(e)}"
-            async_to_sync(self.channel_layer.group_send)(
-                self.group_name,
-                {'type': 'serial.message', 'error': error_msg}
-            )
+            print(f"❌ Error in serial read thread ({com_port}): {str(e)}")
         finally:
-            if self.ser and self.ser.is_open:
-                self.ser.close()
+            if ser and ser.is_open:
+                ser.close()
 
-    def process_message(self, message):
-        com_port = self.ser.port
-        if self.card in ["LVDT_4CH", "PIEZO_4CH"]:
-            if not self.validate_message(message):
-                error_msg = f"Invalid data for {self.card}: {message}"
-                async_to_sync(self.channel_layer.group_send)(
-                    self.group_name,
-                    {'type': 'serial.message', 'error': error_msg}
-                )
-                return
-
-        async_to_sync(self.channel_layer.group_send)(
-            self.group_name,
-            {
-                'type': 'serial.message',
-                'message': message,
-                'com_port': com_port,
-                'length': len(message)
-            }
-        )
-
-    def validate_message(self, message):
-        pattern = r'^[A-D][+-]\d+$'  # Simplified pattern for 4 channels
-        parts = re.findall(r'[A-D][+-]\d+', message)
-        return len(parts) == 4 and all(re.match(pattern, part) for part in parts)
-
-    async def send_error(self, error_msg, com_port=None):
-        payload = {'error': error_msg}
-        if com_port:
-            payload['com_port'] = com_port
-        await self.channel_layer.group_send(
-            self.group_name,
-            {'type': 'serial.message', **payload}
-        )
+    def extract_values(self, message):
+        """
+        Extracts values from serial message in format A+260000B+564765C+456345D+675678
+        """
+        import re
+        pattern = r'[A-Za-z][^A-Za-z0-9\s]\d+'
+        matches = re.findall(pattern, message)
+        return matches
 
     async def serial_message(self, event):
-        payload = {}
-        if 'error' in event:
-            payload['error'] = event['error']
-            if 'com_port' in event:
-                payload['com_port'] = event['com_port']
-        elif 'message' in event:
-            payload.update({
-                'message': event['message'],
-                'com_port': event.get('com_port', 'N/A'),
-                'length': event.get('length', 0)
-            })
-        
-        await self.send(text_data=json.dumps(payload))
+        """
+        Sends serial data to WebSocket clients.
+        """
+        await self.send(text_data=json.dumps({
+            'com_port': event['com_port'],
+            'message': event['message']
+        }))

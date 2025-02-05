@@ -109,7 +109,7 @@ def masterReport(request):
         # Initialize the data_dict with required headers
         data_dict = {
             'Date': [],
-            'Compono': [],
+            'ProbeNo': [],
             'Shift': [],
             'Operator': [],
             'Machine': [],
@@ -161,7 +161,7 @@ def masterReport(request):
 
             # Append the grouped values to the data_dict
             data_dict['Date'].append(date)
-            data_dict['Compono'].append(compono)
+            data_dict['ProbeNo'].append(compono)
             data_dict['Shift'].append(shift)
             data_dict['Operator'].append(operator)
             data_dict['Machine'].append(machine)

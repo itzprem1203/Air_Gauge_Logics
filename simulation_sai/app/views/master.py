@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 
-from app.models import measure_data, parameter_settings,Master_settings
+from app.models import measure_data, parameter_settings,Master_settings,comport_settings
 
 
 
@@ -155,6 +155,10 @@ def master(request):
     elif request.method == 'GET':
         try:
 
+            settings_list = list(comport_settings.objects.values(
+                'card', 'com_port', 'baud_rate', 'bytesize', 'stopbits', 'parity'
+            ))
+
             # Your initial queryset for part_model_values
             part_model_values = measure_data.objects.values_list('part_model', flat=True).distinct()
             print('part_model_values:', part_model_values)
@@ -173,6 +177,7 @@ def master(request):
                 'operator_values': operator_values,
                 'shift_values': shift_values,
                 'machine_values':machine_values,
+                'settings_json': json.dumps(settings_list),
 
             }
 

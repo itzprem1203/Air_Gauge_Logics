@@ -71,15 +71,17 @@ def parameter(request):
             else:
                 paraname = []  # If no model is selected, set paraname to an empty list
 
-            return render(request, 'app/parameter.html', {
+            context = {
                 'table_body_1_data': table_body_1_data,
                 'paraname': paraname,
                 'selected_model_id': model_id,
-            })
+            }    
+
+            return render(request, 'app/parameter.html',context)
 
         except Exception as e:
             print(f'Exception: {e}')
-            return JsonResponse({'key': 'value'})
+            return render(request, 'app/parameter.html')
             
     elif request.method == 'POST':
         try:
